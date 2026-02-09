@@ -43,7 +43,7 @@ describe('InMemoryCache', () => {
 
     it('should not expire values without TTL', async () => {
       await cache.set('key1', 'value1');
-      
+
       // Wait a bit
       await new Promise((resolve) => setTimeout(resolve, 100));
 

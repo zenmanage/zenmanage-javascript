@@ -30,12 +30,12 @@ export class RuleEngine {
       // All clauses must match (AND logic)
       return rule.clauses.every((clause) => this.evaluateClause(clause, context));
     }
-    
+
     if (rule.criteria) {
       // Single criteria condition
       return this.evaluateClause(rule.criteria, context);
     }
-    
+
     // No conditions means rule matches
     return true;
   }

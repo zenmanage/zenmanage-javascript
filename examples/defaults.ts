@@ -41,7 +41,7 @@ async function main() {
     'api-version': 'v2',
     'max-items-per-page': 50,
     'enable-analytics': false,
-    'theme': 'dark',
+    theme: 'dark',
   });
 
   console.log(`   Defaults configured: ${defaults.size()}`);
@@ -98,10 +98,7 @@ async function main() {
   const dynamicDefaults = new DefaultsCollection();
 
   // Add defaults one by one
-  dynamicDefaults
-    .set('feature-a', true)
-    .set('feature-b', false)
-    .set('feature-c', true);
+  dynamicDefaults.set('feature-a', true).set('feature-b', false).set('feature-c', true);
 
   console.log(`   Initial defaults: ${dynamicDefaults.size()}`);
 

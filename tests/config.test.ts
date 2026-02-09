@@ -18,9 +18,7 @@ describe('ConfigBuilder', () => {
     });
 
     it('should build config with required token', () => {
-      const config = ConfigBuilder.create()
-        .withEnvironmentToken('tok_test_123')
-        .build();
+      const config = ConfigBuilder.create().withEnvironmentToken('tok_test_123').build();
 
       expect(config.environmentToken).toBe('tok_test_123');
       expect(config.cacheTtl).toBe(3600);

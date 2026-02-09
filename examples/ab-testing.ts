@@ -76,7 +76,9 @@ async function main() {
         .withContext(context)
         .single('landing-page-variant', 'original');
 
-      console.log(`   Visitor ${visitor.id} (${visitor.source}/${visitor.device}): ${variant.asString()}`);
+      console.log(
+        `   Visitor ${visitor.id} (${visitor.source}/${visitor.device}): ${variant.asString()}`
+      );
 
       // Route to different landing pages
       switch (variant.asString()) {
@@ -133,7 +135,9 @@ async function main() {
     }
   }
 
-  console.log(`\n   ${newAlgorithmCount}/${testUsers.length} users on new algorithm (${(newAlgorithmCount / testUsers.length * 100).toFixed(0)}%)\n`);
+  console.log(
+    `\n   ${newAlgorithmCount}/${testUsers.length} users on new algorithm (${((newAlgorithmCount / testUsers.length) * 100).toFixed(0)}%)\n`
+  );
 
   // Example 4: Feature flag with metrics tracking
   console.log('4. A/B Test with Usage Tracking\n');

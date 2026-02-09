@@ -6,9 +6,7 @@ import { ConfigurationError } from '../src/errors';
 describe('Zenmanage', () => {
   describe('constructor', () => {
     it('should create instance with valid config', () => {
-      const config = ConfigBuilder.create()
-        .withEnvironmentToken('tok_test_123')
-        .build();
+      const config = ConfigBuilder.create().withEnvironmentToken('tok_test_123').build();
 
       const zenmanage = new Zenmanage(config);
       expect(zenmanage).toBeInstanceOf(Zenmanage);
@@ -42,7 +40,7 @@ describe('Zenmanage', () => {
 
       // Config build should succeed
       const builtConfig = config.build();
-      
+
       // Creating Zenmanage should succeed (filesystem cache handles missing directory gracefully)
       const zenmanage = new Zenmanage(builtConfig);
       expect(zenmanage).toBeInstanceOf(Zenmanage);
@@ -67,13 +65,11 @@ describe('Zenmanage', () => {
 
   describe('flags', () => {
     it('should return FlagManager instance', () => {
-      const config = ConfigBuilder.create()
-        .withEnvironmentToken('tok_test_123')
-        .build();
+      const config = ConfigBuilder.create().withEnvironmentToken('tok_test_123').build();
 
       const zenmanage = new Zenmanage(config);
       const flagManager = zenmanage.flags();
-      
+
       expect(flagManager).toBeDefined();
       expect(typeof flagManager.single).toBe('function');
       expect(typeof flagManager.all).toBe('function');
@@ -81,14 +77,12 @@ describe('Zenmanage', () => {
     });
 
     it('should return the same FlagManager instance', () => {
-      const config = ConfigBuilder.create()
-        .withEnvironmentToken('tok_test_123')
-        .build();
+      const config = ConfigBuilder.create().withEnvironmentToken('tok_test_123').build();
 
       const zenmanage = new Zenmanage(config);
       const flags1 = zenmanage.flags();
       const flags2 = zenmanage.flags();
-      
+
       expect(flags1).toBe(flags2);
     });
   });

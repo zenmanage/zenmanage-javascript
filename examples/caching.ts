@@ -160,9 +160,7 @@ async function main() {
   console.log(`   - ZENMANAGE_CACHE_BACKEND: ${process.env.ZENMANAGE_CACHE_BACKEND || 'not set'}`);
   console.log(`   - ZENMANAGE_CACHE_DIR: ${process.env.ZENMANAGE_CACHE_DIR || 'not set'}`);
 
-  const envZenmanage = new Zenmanage(
-    ConfigBuilder.fromEnvironment().build()
-  );
+  const envZenmanage = new Zenmanage(ConfigBuilder.fromEnvironment().build());
 
   console.log('   ✓ Configuration loaded from environment\n');
 
@@ -178,7 +176,9 @@ async function main() {
     await memoryZenmanage.flags().single('example-flag', true);
   }
   const memoryTime = Date.now() - memoryStart;
-  console.log(`   ${iterations} fetches: ${memoryTime}ms (${(memoryTime / iterations).toFixed(2)}ms avg)\n`);
+  console.log(
+    `   ${iterations} fetches: ${memoryTime}ms (${(memoryTime / iterations).toFixed(2)}ms avg)\n`
+  );
 
   // Null cache (always fetches from API)
   console.log('   Testing null cache (direct API):');
