@@ -1,0 +1,9 @@
+dist
+coverage
+examples
+tests
+*.config.ts
+*.config.js
+*.config.cjs
+.eslintrc.cjs
+tsconfig.json
