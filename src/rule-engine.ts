@@ -55,43 +55,44 @@ export class RuleEngine {
     }
 
     const attributeValues = attribute.getValues();
+    const attributeClauseValue = this.toAttributeClauseValue(clause.value);
 
     switch (clause.operator) {
       case 'equals':
-        return this.evaluateEquals(attributeValues, clause.value);
+        return this.evaluateEquals(attributeValues, attributeClauseValue);
 
       case 'not_equals':
-        return !this.evaluateEquals(attributeValues, clause.value);
+        return !this.evaluateEquals(attributeValues, attributeClauseValue);
 
       case 'contains':
-        return this.evaluateContains(attributeValues, clause.value);
+        return this.evaluateContains(attributeValues, attributeClauseValue);
 
       case 'not_contains':
-        return !this.evaluateContains(attributeValues, clause.value);
+        return !this.evaluateContains(attributeValues, attributeClauseValue);
 
       case 'in':
-        return this.evaluateIn(attributeValues, clause.value);
+        return this.evaluateIn(attributeValues, attributeClauseValue);
 
       case 'not_in':
-        return !this.evaluateIn(attributeValues, clause.value);
+        return !this.evaluateIn(attributeValues, attributeClauseValue);
 
       case 'starts_with':
-        return this.evaluateStartsWith(attributeValues, clause.value);
+        return this.evaluateStartsWith(attributeValues, attributeClauseValue);
 
       case 'ends_with':
-        return this.evaluateEndsWith(attributeValues, clause.value);
+        return this.evaluateEndsWith(attributeValues, attributeClauseValue);
 
       case 'gt':
-        return this.evaluateGreaterThan(attributeValues, clause.value);
+        return this.evaluateGreaterThan(attributeValues, attributeClauseValue);
 
       case 'gte':
-        return this.evaluateGreaterThanOrEqual(attributeValues, clause.value);
+        return this.evaluateGreaterThanOrEqual(attributeValues, attributeClauseValue);
 
       case 'lt':
-        return this.evaluateLessThan(attributeValues, clause.value);
+        return this.evaluateLessThan(attributeValues, attributeClauseValue);
 
       case 'lte':
-        return this.evaluateLessThanOrEqual(attributeValues, clause.value);
+        return this.evaluateLessThanOrEqual(attributeValues, attributeClauseValue);
 
       default:
         return false;
@@ -174,19 +175,20 @@ export class RuleEngine {
     }
 
     if (Array.isArray(clauseValue)) {
-      return clauseValue
-        .map((item) => {
-          if (typeof item === 'string') {
-            return { identifier: item, type: null };
-          }
+      const targets: RuleContextTarget[] = [];
 
-          if (item && typeof item.identifier === 'string') {
-            return { identifier: item.identifier, type: item.type ?? null };
-          }
+      for (const item of clauseValue) {
+        if (typeof item === 'string') {
+          targets.push({ identifier: item, type: null });
+          continue;
+        }
 
-          return null;
-        })
-        .filter((item): item is RuleContextTarget => item !== null);
+        if (item && typeof item.identifier === 'string') {
+          targets.push({ identifier: item.identifier, type: item.type ?? null });
+        }
+      }
+
+      return targets;
     }
 
     if (typeof clauseValue.identifier === 'string') {
@@ -194,6 +196,28 @@ export class RuleEngine {
     }
 
     return [];
+  }
+
+  private toAttributeClauseValue(
+    clauseValue: string | string[] | RuleContextTarget | RuleContextTarget[] | undefined
+  ): string | string[] | undefined {
+    if (clauseValue === undefined) {
+      return undefined;
+    }
+
+    if (typeof clauseValue === 'string') {
+      return clauseValue;
+    }
+
+    if (Array.isArray(clauseValue)) {
+      if (clauseValue.every((item) => typeof item === 'string')) {
+        return clauseValue;
+      }
+
+      return undefined;
+    }
+
+    return undefined;
   }
 
   private evaluateEquals(values: string[], clauseValue: string | string[] | undefined): boolean {

@@ -272,6 +272,35 @@ const flag = await zenmanage.flags()
 - **device**: Physical devices
 - **custom**: Any custom type you define
 
+### Rule Targeting With Context Types
+
+When rules target `context` or `segment`, the SDK compares the context `identifier` and, if present, the `type`. If a rule value omits `type` (or sets it to `null`), only the identifier is matched.
+
+```typescript
+const rules = [
+  {
+    clauses: [
+      {
+        attribute: 'context',
+        operator: 'equals',
+        value: { identifier: 'user-123', type: 'user' },
+      },
+    ],
+    value: { value: { boolean: true } },
+  },
+  {
+    clauses: [
+      {
+        attribute: 'segment',
+        operator: 'equals',
+        value: { identifier: 'shared-id', type: null },
+      },
+    ],
+    value: { value: { boolean: true } },
+  },
+];
+```
+
 ## Flag Types
 
 ### Boolean Flags

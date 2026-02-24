@@ -17,11 +17,11 @@ describe('RuleEngine', () => {
       const rules: Rule[] = [
         {
           clauses: [{ attribute: 'country', operator: 'equals', value: 'US' }],
-          target: { value: { boolean: true } },
+          value: { value: { boolean: true } },
         },
         {
           clauses: [{ attribute: 'country', operator: 'equals', value: 'CA' }],
-          target: { value: { boolean: false } },
+          value: { value: { boolean: false } },
         },
       ];
 
@@ -36,7 +36,7 @@ describe('RuleEngine', () => {
       const rules: Rule[] = [
         {
           clauses: [{ attribute: 'country', operator: 'equals', value: 'US' }],
-          target: { value: { boolean: true } },
+          value: { value: { boolean: true } },
         },
       ];
 
@@ -53,7 +53,7 @@ describe('RuleEngine', () => {
       const rules: Rule[] = [
         {
           clauses: [{ attribute: 'plan', operator: 'equals', value: 'premium' }],
-          target: { value: { boolean: true } },
+          value: { value: { boolean: true } },
         },
       ];
 
@@ -68,7 +68,7 @@ describe('RuleEngine', () => {
       const rules: Rule[] = [
         {
           clauses: [{ attribute: 'plan', operator: 'equals', value: 'premium' }],
-          target: { value: { boolean: true } },
+          value: { value: { boolean: true } },
         },
       ];
 
@@ -85,7 +85,7 @@ describe('RuleEngine', () => {
       const rules: Rule[] = [
         {
           clauses: [{ attribute: 'plan', operator: 'not_equals', value: 'basic' }],
-          target: { value: { boolean: true } },
+          value: { value: { boolean: true } },
         },
       ];
 
@@ -102,7 +102,7 @@ describe('RuleEngine', () => {
       const rules: Rule[] = [
         {
           clauses: [{ attribute: 'email', operator: 'contains', value: '@acme.com' }],
-          target: { value: { boolean: true } },
+          value: { value: { boolean: true } },
         },
       ];
 
@@ -119,7 +119,7 @@ describe('RuleEngine', () => {
       const rules: Rule[] = [
         {
           clauses: [{ attribute: 'country', operator: 'in', value: ['US', 'CA', 'UK'] }],
-          target: { value: { boolean: true } },
+          value: { value: { boolean: true } },
         },
       ];
 
@@ -134,7 +134,7 @@ describe('RuleEngine', () => {
       const rules: Rule[] = [
         {
           clauses: [{ attribute: 'country', operator: 'in', value: ['US', 'CA'] }],
-          target: { value: { boolean: true } },
+          value: { value: { boolean: true } },
         },
       ];
 
@@ -151,7 +151,7 @@ describe('RuleEngine', () => {
       const rules: Rule[] = [
         {
           clauses: [{ attribute: 'user_id', operator: 'starts_with', value: 'user-' }],
-          target: { value: { boolean: true } },
+          value: { value: { boolean: true } },
         },
       ];
 
@@ -168,7 +168,7 @@ describe('RuleEngine', () => {
       const rules: Rule[] = [
         {
           clauses: [{ attribute: 'email', operator: 'ends_with', value: '@acme.com' }],
-          target: { value: { boolean: true } },
+          value: { value: { boolean: true } },
         },
       ];
 
@@ -185,7 +185,7 @@ describe('RuleEngine', () => {
       const rules: Rule[] = [
         {
           clauses: [{ attribute: 'age', operator: 'gt', value: '18' }],
-          target: { value: { boolean: true } },
+          value: { value: { boolean: true } },
         },
       ];
 
@@ -200,7 +200,7 @@ describe('RuleEngine', () => {
       const rules: Rule[] = [
         {
           clauses: [{ attribute: 'age', operator: 'gte', value: '18' }],
-          target: { value: { boolean: true } },
+          value: { value: { boolean: true } },
         },
       ];
 
@@ -215,7 +215,7 @@ describe('RuleEngine', () => {
       const rules: Rule[] = [
         {
           clauses: [{ attribute: 'age', operator: 'lt', value: '18' }],
-          target: { value: { boolean: true } },
+          value: { value: { boolean: true } },
         },
       ];
 
@@ -230,7 +230,7 @@ describe('RuleEngine', () => {
       const rules: Rule[] = [
         {
           clauses: [{ attribute: 'age', operator: 'lte', value: '18' }],
-          target: { value: { boolean: true } },
+          value: { value: { boolean: true } },
         },
       ];
 
@@ -250,7 +250,7 @@ describe('RuleEngine', () => {
             { attribute: 'country', operator: 'equals', value: 'US' },
             { attribute: 'plan', operator: 'equals', value: 'premium' },
           ],
-          target: { value: { boolean: true } },
+          value: { value: { boolean: true } },
         },
       ];
 
@@ -279,7 +279,7 @@ describe('RuleEngine', () => {
       const rules: Rule[] = [
         {
           clauses: [{ attribute: 'nonexistent', operator: 'equals', value: 'value' }],
-          target: { value: { boolean: true } },
+          value: { value: { boolean: true } },
         },
       ];
 
@@ -300,7 +300,7 @@ describe('RuleEngine', () => {
               value: { identifier: 'user-123', type: 'user' },
             },
           ],
-          target: { value: { boolean: true } },
+          value: { value: { boolean: true } },
         },
       ];
 
@@ -320,7 +320,7 @@ describe('RuleEngine', () => {
               value: { identifier: 'user-123', type: 'organization' },
             },
           ],
-          target: { value: { boolean: true } },
+          value: { value: { boolean: true } },
         },
       ];
 
@@ -340,7 +340,7 @@ describe('RuleEngine', () => {
               value: { identifier: 'shared-id', type: null },
             },
           ],
-          target: { value: { boolean: true } },
+          value: { value: { boolean: true } },
         },
       ];
 
@@ -360,7 +360,7 @@ describe('RuleEngine', () => {
               value: { identifier: 'beta-1', type: null },
             },
           ],
-          target: { value: { boolean: true } },
+          value: { value: { boolean: true } },
         },
       ];
 
