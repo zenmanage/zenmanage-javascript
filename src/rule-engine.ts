@@ -1,5 +1,5 @@
 import type { Context } from './context';
-import type { Rule, RuleCondition } from './types';
+import type { Rule, RuleCondition, RuleContextTarget } from './types';
 
 /**
  * Rule engine for evaluating flag rules against context
@@ -44,6 +44,10 @@ export class RuleEngine {
    * Evaluate a single clause against context
    */
   private evaluateClause(clause: RuleCondition, context: Context): boolean {
+    if (clause.attribute === 'context' || clause.attribute === 'segment') {
+      return this.evaluateContextClause(clause, context);
+    }
+
     const attribute = context.getAttribute(clause.attribute);
 
     if (!attribute) {
@@ -92,6 +96,104 @@ export class RuleEngine {
       default:
         return false;
     }
+  }
+
+  private evaluateContextClause(clause: RuleCondition, context: Context): boolean {
+    const identifier = context.getIdentifier();
+    if (!identifier) {
+      return false;
+    }
+
+    const targets = this.toContextTargets(clause.value);
+    if (targets.length === 0) {
+      return false;
+    }
+
+    const contextType = context.getType();
+    const matchingTargets = targets
+      .filter((target) => target.type == null || target.type === contextType)
+      .map((target) => target.identifier);
+
+    if (matchingTargets.length === 0) {
+      return false;
+    }
+
+    const values = [identifier];
+
+    switch (clause.operator) {
+      case 'equals':
+        return this.evaluateEquals(values, matchingTargets);
+
+      case 'not_equals':
+        return !this.evaluateEquals(values, matchingTargets);
+
+      case 'contains':
+        return this.evaluateContains(values, matchingTargets);
+
+      case 'not_contains':
+        return !this.evaluateContains(values, matchingTargets);
+
+      case 'in':
+        return this.evaluateIn(values, matchingTargets);
+
+      case 'not_in':
+        return !this.evaluateIn(values, matchingTargets);
+
+      case 'starts_with':
+        return this.evaluateStartsWith(values, matchingTargets);
+
+      case 'ends_with':
+        return this.evaluateEndsWith(values, matchingTargets);
+
+      case 'gt':
+        return this.evaluateGreaterThan(values, matchingTargets);
+
+      case 'gte':
+        return this.evaluateGreaterThanOrEqual(values, matchingTargets);
+
+      case 'lt':
+        return this.evaluateLessThan(values, matchingTargets);
+
+      case 'lte':
+        return this.evaluateLessThanOrEqual(values, matchingTargets);
+
+      default:
+        return false;
+    }
+  }
+
+  private toContextTargets(
+    clauseValue: string | string[] | RuleContextTarget | RuleContextTarget[] | undefined
+  ): RuleContextTarget[] {
+    if (clauseValue === undefined) {
+      return [];
+    }
+
+    if (typeof clauseValue === 'string') {
+      return [{ identifier: clauseValue, type: null }];
+    }
+
+    if (Array.isArray(clauseValue)) {
+      return clauseValue
+        .map((item) => {
+          if (typeof item === 'string') {
+            return { identifier: item, type: null };
+          }
+
+          if (item && typeof item.identifier === 'string') {
+            return { identifier: item.identifier, type: item.type ?? null };
+          }
+
+          return null;
+        })
+        .filter((item): item is RuleContextTarget => item !== null);
+    }
+
+    if (typeof clauseValue.identifier === 'string') {
+      return [{ identifier: clauseValue.identifier, type: clauseValue.type ?? null }];
+    }
+
+    return [];
   }
 
   private evaluateEquals(values: string[], clauseValue: string | string[] | undefined): boolean {

@@ -288,4 +288,86 @@ describe('RuleEngine', () => {
       expect(result).toBeNull();
     });
   });
+
+  describe('context target rules', () => {
+    it('should match context target when type and identifier both match', () => {
+      const rules: Rule[] = [
+        {
+          clauses: [
+            {
+              attribute: 'context',
+              operator: 'equals',
+              value: { identifier: 'user-123', type: 'user' },
+            },
+          ],
+          target: { value: { boolean: true } },
+        },
+      ];
+
+      const context = Context.single('user', 'user-123');
+
+      const result = engine.evaluate(rules, context);
+      expect(result).toBe(rules[0]);
+    });
+
+    it('should not match context target when type differs', () => {
+      const rules: Rule[] = [
+        {
+          clauses: [
+            {
+              attribute: 'context',
+              operator: 'equals',
+              value: { identifier: 'user-123', type: 'organization' },
+            },
+          ],
+          target: { value: { boolean: true } },
+        },
+      ];
+
+      const context = Context.single('user', 'user-123');
+
+      const result = engine.evaluate(rules, context);
+      expect(result).toBeNull();
+    });
+
+    it('should match context target by identifier only when rule type is null', () => {
+      const rules: Rule[] = [
+        {
+          clauses: [
+            {
+              attribute: 'context',
+              operator: 'equals',
+              value: { identifier: 'shared-id', type: null },
+            },
+          ],
+          target: { value: { boolean: true } },
+        },
+      ];
+
+      const context = Context.single('organization', 'shared-id');
+
+      const result = engine.evaluate(rules, context);
+      expect(result).toBe(rules[0]);
+    });
+
+    it('should match segment target by identifier when segment type is null', () => {
+      const rules: Rule[] = [
+        {
+          clauses: [
+            {
+              attribute: 'segment',
+              operator: 'equals',
+              value: { identifier: 'beta-1', type: null },
+            },
+          ],
+          target: { value: { boolean: true } },
+        },
+      ];
+
+      const context = Context.single('user', 'beta-1');
+
+      const result = engine.evaluate(rules, context);
+      expect(result).toBe(rules[0]);
+    });
+  });
 });

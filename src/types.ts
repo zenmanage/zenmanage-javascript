@@ -73,7 +73,12 @@ export interface ContextData {
 export interface RuleCondition {
   attribute: string;
   operator: string;
-  value?: string | string[];
+  value?: string | string[] | RuleContextTarget | RuleContextTarget[];
+}
+
+export interface RuleContextTarget {
+  identifier: string;
+  type?: string | null;
 }
 
 /**
