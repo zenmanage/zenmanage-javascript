@@ -29,7 +29,9 @@ async function main() {
     try {
       const flag = await zenmanage.flags().withContext(context).single('new-checkout-flow');
       const enabled = flag.isEnabled();
-      console.log(`   ${userId}: ${enabled ? 'IN rollout (new flow)' : 'NOT in rollout (old flow)'}`);
+      console.log(
+        `   ${userId}: ${enabled ? 'IN rollout (new flow)' : 'NOT in rollout (old flow)'}`
+      );
     } catch (error) {
       console.error(`   Error for ${userId}:`, (error as Error).message);
     }
@@ -69,7 +71,10 @@ async function main() {
     const context = Context.single('user', userId);
 
     try {
-      const flag = await zenmanage.flags().withContext(context).single('landing-page-variant', 'control');
+      const flag = await zenmanage
+        .flags()
+        .withContext(context)
+        .single('landing-page-variant', 'control');
       console.log(`   ${userId}: ${flag.asString()}`);
     } catch (error) {
       console.error(`   Error for ${userId}:`, (error as Error).message);
@@ -84,11 +89,19 @@ async function main() {
   const context = Context.single('user', 'consistent-user');
 
   try {
-    const result1 = (await zenmanage.flags().withContext(context).single('rollout-flag', false)).isEnabled();
-    const result2 = (await zenmanage.flags().withContext(context).single('rollout-flag', false)).isEnabled();
-    const result3 = (await zenmanage.flags().withContext(context).single('rollout-flag', false)).isEnabled();
+    const result1 = (
+      await zenmanage.flags().withContext(context).single('rollout-flag', false)
+    ).isEnabled();
+    const result2 = (
+      await zenmanage.flags().withContext(context).single('rollout-flag', false)
+    ).isEnabled();
+    const result3 = (
+      await zenmanage.flags().withContext(context).single('rollout-flag', false)
+    ).isEnabled();
 
-    console.log(`   Same result every time: ${result1 === result2 && result2 === result3 ? 'Yes' : 'No'}`);
+    console.log(
+      `   Same result every time: ${result1 === result2 && result2 === result3 ? 'Yes' : 'No'}`
+    );
   } catch (error) {
     console.error('   Error:', (error as Error).message);
   }

@@ -160,15 +160,11 @@ describe('rollout', () => {
       });
 
       it('should throw for percentage < 0', () => {
-        expect(() => isInBucket('salt', 'id', -1)).toThrow(
-          'Percentage must be between 0 and 100'
-        );
+        expect(() => isInBucket('salt', 'id', -1)).toThrow('Percentage must be between 0 and 100');
       });
 
       it('should throw for percentage > 100', () => {
-        expect(() => isInBucket('salt', 'id', 101)).toThrow(
-          'Percentage must be between 0 and 100'
-        );
+        expect(() => isInBucket('salt', 'id', 101)).toThrow('Percentage must be between 0 and 100');
       });
 
       it('should not throw for percentage = 0', () => {
