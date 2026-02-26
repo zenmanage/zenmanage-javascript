@@ -1,6 +1,6 @@
 {
   "name": "@zenmanage/sdk",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Feature flags SDK for JavaScript/TypeScript - works in Node.js and browsers",
   "keywords": [
     "feature-flags",
