@@ -40,7 +40,7 @@ A/B testing example showing how to use flags for experiments and variants.
 Using default values with inline defaults and DefaultsCollection.
 
 ### caching.ts
-Different cache backend configurations and their use cases.
+Different cache backend configurations and their use cases. Demonstrates the filesystem cache from `@zenmanage/sdk/node` and the browser-safe in-memory cache from `@zenmanage/sdk`.
 
 ### percentage-rollouts.ts
 SDK-side percentage rollouts with automatic CRC32B bucketing.
@@ -48,3 +48,5 @@ SDK-side percentage rollouts with automatic CRC32B bucketing.
 ## Note
 
 These examples assume you have flags set up in your Zenmanage dashboard. You may need to adjust flag keys to match your configuration.
+
+The `caching.ts` example imports from `@zenmanage/sdk/node` for `FileSystemCache`. All other examples use the default `@zenmanage/sdk` entry point, which is safe for both Node.js and browsers.

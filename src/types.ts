@@ -2,6 +2,8 @@
  * Common types used throughout the SDK
  */
 
+import type { Cache } from './cache/cache.interface';
+
 /**
  * Logger interface compatible with console and popular logging libraries
  */
@@ -30,6 +32,8 @@ export interface Config {
   apiEndpoint?: string;
   /** Optional logger instance */
   logger?: Logger;
+  /** Custom cache instance (overrides cacheBackend when provided) */
+  customCache?: Cache;
 }
 
 /**

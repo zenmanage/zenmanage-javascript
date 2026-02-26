@@ -1,4 +1,5 @@
 import type { Config, Logger } from './types';
+import type { Cache } from './cache/cache.interface';
 import { ConfigurationError } from './errors';
 
 /**
@@ -36,6 +37,10 @@ export class ConfigBuilder {
    */
   static fromEnvironment(): ConfigBuilder {
     const builder = new ConfigBuilder();
+
+    if (typeof process === 'undefined' || !process.env) {
+      return builder;
+    }
 
     const token = process.env.ZENMANAGE_ENVIRONMENT_TOKEN;
     if (token) {
@@ -121,6 +126,15 @@ export class ConfigBuilder {
   }
 
   /**
+   * Set a custom cache instance (overrides cacheBackend)
+   * Use this to provide a FileSystemCache from '@zenmanage/sdk/node' or any custom Cache implementation
+   */
+  withCache(cache: Cache): this {
+    this.config.customCache = cache;
+    return this;
+  }
+
+  /**
    * Set a custom logger
    */
   withLogger(logger: Logger): this {
@@ -136,7 +150,7 @@ export class ConfigBuilder {
       throw new ConfigurationError('Environment token is required');
     }
 
-    if (this.config.cacheBackend === 'filesystem' && !this.config.cacheDirectory) {
+    if (this.config.cacheBackend === 'filesystem' && !this.config.cacheDirectory && !this.config.customCache) {
       throw new ConfigurationError('Cache directory is required for filesystem cache');
     }
 

@@ -6,6 +6,17 @@
 
 Add feature flags to your JavaScript/TypeScript application in minutes. Control feature rollouts, A/B test, and manage configurations without deploying code. Works in both Node.js and browsers!
 
+## Entry Points
+
+The SDK ships two entry points:
+
+| Import | Environment | Includes |
+|---|---|---|
+| `@zenmanage/sdk` | **Browser + Node.js** | Core SDK, `InMemoryCache`, `NullCache` |
+| `@zenmanage/sdk/node` | **Node.js only** | Everything above + `FileSystemCache` |
+
+Use `@zenmanage/sdk` for browser apps or universal code. Use `@zenmanage/sdk/node` when you need filesystem caching in a Node.js server.
+
 ## Why Zenmanage?
 
 - 🚀 **Fast**: Rules cached locally - ~1ms evaluation time
@@ -195,8 +206,8 @@ for (const flag of allFlags) {
 const config = ConfigBuilder.create()
   .withEnvironmentToken('tok_your_token_here')  // Required
   .withCacheTtl(3600)                            // Cache TTL in seconds (default: 3600)
-  .withCacheBackend('memory')                    // 'memory', 'filesystem', 'null' (default: 'memory')
-  .withCacheDirectory('/tmp/zenmanage')          // Required if using 'filesystem' cache
+  .withCacheBackend('memory')                    // 'memory' or 'null' (default: 'memory')
+  .withCache(customCacheInstance)                 // Custom Cache implementation (overrides cacheBackend)
   .withUsageReporting(true)                      // Enable usage tracking (default: true)
   .withApiEndpoint('https://api.zenmanage.com')  // Custom API endpoint (default: api.zenmanage.com)
   .withLogger(customLogger)                      // Custom logger instance
@@ -205,7 +216,7 @@ const config = ConfigBuilder.create()
 const zenmanage = new Zenmanage(config);
 ```
 
-### Configuration from Environment Variables
+### Configuration from Environment Variables (Node.js only)
 
 ```typescript
 // Reads from environment variables:
@@ -223,7 +234,7 @@ const zenmanage = new Zenmanage(config);
 ## Cache Backends
 
 ### Memory Cache (Default)
-Best for: Most applications, serverless functions
+Best for: Most applications, serverless functions, browsers
 
 ```typescript
 ConfigBuilder.create()
@@ -232,20 +243,45 @@ ConfigBuilder.create()
   .build();
 ```
 
-Data is cached in memory for the lifetime of the application. Fastest option but data is lost on restart.
+Data is cached in memory for the lifetime of the application. Fastest option but data is lost on restart. Works everywhere (Node.js and browsers).
 
 ### Filesystem Cache (Node.js only)
 Best for: Long-running Node.js servers
 
+The filesystem cache is available from the `@zenmanage/sdk/node` entry point:
+
 ```typescript
-ConfigBuilder.create()
+import { Zenmanage, ConfigBuilder, FileSystemCache } from '@zenmanage/sdk/node';
+
+const config = ConfigBuilder.create()
   .withEnvironmentToken('tok_your_token_here')
-  .withCacheBackend('filesystem')
-  .withCacheDirectory('/tmp/zenmanage-cache')
+  .withCache(new FileSystemCache('/tmp/zenmanage-cache'))
+  .withCacheTtl(7200)
   .build();
 ```
 
-Data persists across application restarts. Only works in Node.js (not browsers).
+Data persists across application restarts. Only available in Node.js — it is not included in the default `@zenmanage/sdk` import to keep the browser bundle free of Node.js dependencies.
+
+### Custom Cache
+
+You can provide any object that implements the `Cache` interface via `.withCache()`:
+
+```typescript
+import type { Cache } from '@zenmanage/sdk';
+
+class RedisCache implements Cache {
+  async get(key: string): Promise<string | null> { /* ... */ }
+  async set(key: string, value: string, ttl?: number): Promise<void> { /* ... */ }
+  async has(key: string): Promise<boolean> { /* ... */ }
+  async delete(key: string): Promise<void> { /* ... */ }
+  async clear(): Promise<void> { /* ... */ }
+}
+
+const config = ConfigBuilder.create()
+  .withEnvironmentToken('tok_your_token_here')
+  .withCache(new RedisCache())
+  .build();
+```
 
 ### Null Cache (No Caching)
 Best for: Testing, debugging
@@ -419,6 +455,7 @@ The SDK is written in TypeScript and includes full type definitions:
 import type {
   Config,
   Logger,
+  Cache,
   FlagType,
   FlagValue,
   ContextData,
@@ -434,7 +471,7 @@ const config: Config = {
 
 ## Browser Usage
 
-The SDK works seamlessly in browsers:
+The default `@zenmanage/sdk` entry point is fully browser-safe — it contains no Node.js built-ins (`fs`, `path`, `util`), so it works with any bundler (Webpack, Vite, Rollup, esbuild, etc.) and from a CDN.
 
 ```html
 <!DOCTYPE html>
@@ -461,7 +498,7 @@ The SDK works seamlessly in browsers:
 </html>
 ```
 
-Or with a bundler (Webpack, Vite, etc.):
+With a bundler (Webpack, Vite, etc.):
 
 ```typescript
 import { Zenmanage, ConfigBuilder } from '@zenmanage/sdk';
@@ -469,10 +506,11 @@ import { Zenmanage, ConfigBuilder } from '@zenmanage/sdk';
 const zenmanage = new Zenmanage(
   ConfigBuilder.create()
     .withEnvironmentToken('tok_your_token_here')
-    .withCacheBackend('memory') // Use memory cache in browsers
     .build()
 );
 ```
+
+> **Note:** `FileSystemCache` is only available from `@zenmanage/sdk/node`. In the browser, use the default in-memory cache or provide a custom `Cache` implementation.
 
 ## Error Handling
 
@@ -538,12 +576,21 @@ test('feature flag enabled', async () => {
 Create a single Zenmanage instance and reuse it throughout your application:
 
 ```typescript
-// zenmanage.ts
-import { Zenmanage, ConfigBuilder } from '@zenmanage/sdk';
+// zenmanage.ts (Node.js)
+import { Zenmanage, ConfigBuilder } from '@zenmanage/sdk/node';
 
 export const zenmanage = new Zenmanage(
   ConfigBuilder.create()
     .withEnvironmentToken(process.env.ZENMANAGE_TOKEN!)
+    .build()
+);
+
+// zenmanage.ts (Browser)
+import { Zenmanage, ConfigBuilder } from '@zenmanage/sdk';
+
+export const zenmanage = new Zenmanage(
+  ConfigBuilder.create()
+    .withEnvironmentToken('tok_your_token_here')
     .build()
 );
 
@@ -569,8 +616,9 @@ const flag = await zenmanage.flags().single('feature', false);
 
 ### 4. Cache Configuration
 
-- Use **memory cache** for most applications and serverless
-- Use **filesystem cache** for long-running Node.js servers
+- Use **memory cache** for most applications, serverless, and browsers (default)
+- Use **filesystem cache** for long-running Node.js servers (import from `@zenmanage/sdk/node`)
+- Use **custom cache** (`.withCache()`) for Redis, IndexedDB, or other backends
 - Use **null cache** only for testing/debugging
 
 ### 5. Error Handling
@@ -604,11 +652,12 @@ Fluent builder for creating configuration.
 
 **Methods:**
 - `create()`: Create new builder
-- `fromEnvironment()`: Create builder from environment variables
+- `fromEnvironment()`: Create builder from environment variables (Node.js only)
 - `withEnvironmentToken(token)`: Set environment token (required)
 - `withCacheTtl(seconds)`: Set cache TTL
-- `withCacheBackend(backend)`: Set cache backend
-- `withCacheDirectory(path)`: Set cache directory for filesystem cache
+- `withCacheBackend(backend)`: Set cache backend (`'memory'` or `'null'`)
+- `withCacheDirectory(path)`: Set cache directory (used with filesystem cache)
+- `withCache(cache)`: Set a custom `Cache` instance (overrides `cacheBackend`)
 - `withUsageReporting(enabled)`: Enable or disable usage tracking
 - `withApiEndpoint(url)`: Set custom API endpoint
 - `withLogger(logger)`: Set custom logger

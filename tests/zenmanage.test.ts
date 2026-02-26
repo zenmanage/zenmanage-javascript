@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Zenmanage } from '../src/zenmanage';
 import { ConfigBuilder } from '../src/config';
 import { ConfigurationError } from '../src/errors';
+import { InMemoryCache } from '../src/cache';
 
 describe('Zenmanage', () => {
   describe('constructor', () => {
@@ -32,18 +33,26 @@ describe('Zenmanage', () => {
       expect(zenmanage.flags()).toBeDefined();
     });
 
-    it('should throw error for filesystem cache without directory', () => {
+    it('should create instance with custom cache', () => {
+      const config = ConfigBuilder.create()
+        .withEnvironmentToken('tok_test_123')
+        .withCache(new InMemoryCache())
+        .build();
+
+      const zenmanage = new Zenmanage(config);
+      expect(zenmanage).toBeInstanceOf(Zenmanage);
+      expect(zenmanage.flags()).toBeDefined();
+    });
+
+    it('should throw error for filesystem cache without custom cache instance', () => {
       const config = ConfigBuilder.create()
         .withEnvironmentToken('tok_test_123')
         .withCacheBackend('filesystem')
-        .withCacheDirectory('/tmp/zenmanage-test');
+        .withCacheDirectory('/tmp/zenmanage-test')
+        .build();
 
-      // Config build should succeed
-      const builtConfig = config.build();
-
-      // Creating Zenmanage should succeed (filesystem cache handles missing directory gracefully)
-      const zenmanage = new Zenmanage(builtConfig);
-      expect(zenmanage).toBeInstanceOf(Zenmanage);
+      expect(() => new Zenmanage(config)).toThrow(ConfigurationError);
+      expect(() => new Zenmanage(config)).toThrow('Filesystem cache requires a custom cache instance');
     });
 
     it('should throw error for invalid cache backend', () => {

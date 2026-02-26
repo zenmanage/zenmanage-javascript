@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Browser-safe default entry point**: `@zenmanage/sdk` no longer imports Node.js built-ins (`fs`, `path`, `util`), making it fully compatible with browser bundlers (Webpack, Vite, Rollup, esbuild, etc.) and CDNs.
+- **New Node.js entry point**: `@zenmanage/sdk/node` re-exports everything from the main entry plus `FileSystemCache`. Use this when you need filesystem caching on a Node.js server.
+- **New `.withCache()` config method**: `ConfigBuilder.withCache(cache)` accepts any `Cache` implementation, making it easy to provide `FileSystemCache` (from the node entry) or a completely custom cache (e.g., Redis, IndexedDB).
+- `ConfigBuilder.fromEnvironment()` now gracefully returns an empty builder in browser environments where `process` is not available.
+- Selecting `cacheBackend: 'filesystem'` without a custom cache instance now throws a clear error directing users to `@zenmanage/sdk/node`.
+
 ## [1.0.0] - 2024-02-09
 
 ### Added

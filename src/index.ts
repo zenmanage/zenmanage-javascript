@@ -12,7 +12,7 @@ export { FlagManager } from './flag-manager';
 export { isInBucket, crc32b } from './rollout';
 
 // Cache exports
-export { InMemoryCache, NullCache, FileSystemCache } from './cache';
+export { InMemoryCache, NullCache } from './cache';
 export type { Cache } from './cache';
 
 // Error exports

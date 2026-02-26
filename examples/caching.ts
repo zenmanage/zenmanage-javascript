@@ -2,9 +2,10 @@
  * Caching Examples
  *
  * This example demonstrates different cache backend configurations and their use cases.
+ * Note: This example uses the Node.js entry point for FileSystemCache support.
  */
 
-import { Zenmanage, ConfigBuilder } from '../src';
+import { Zenmanage, ConfigBuilder, FileSystemCache } from '../src/node';
 import * as os from 'os';
 import * as path from 'path';
 
@@ -43,14 +44,15 @@ async function main() {
 
   // Example 2: Filesystem Cache (Node.js only)
   console.log('2. Filesystem Cache (Node.js only)\n');
+  console.log('   Import FileSystemCache from @zenmanage/sdk/node:\n');
+  console.log('     import { FileSystemCache } from "@zenmanage/sdk/node";\n');
 
   const cacheDir = path.join(os.tmpdir(), 'zenmanage-cache');
 
   const filesystemZenmanage = new Zenmanage(
     ConfigBuilder.create()
       .withEnvironmentToken(process.env.ZENMANAGE_ENVIRONMENT_TOKEN || 'tok_your_token_here')
-      .withCacheBackend('filesystem')
-      .withCacheDirectory(cacheDir)
+      .withCache(new FileSystemCache(cacheDir))
       .withCacheTtl(7200) // 2 hours
       .build()
   );
@@ -194,8 +196,9 @@ async function main() {
 
   console.log('Examples completed!');
   console.log('\nCache Selection Guide:');
-  console.log('  - Memory: Most applications, serverless, default choice');
-  console.log('  - Filesystem: Long-running servers, Node.js only');
+  console.log('  - Memory: Most applications, serverless, browsers, default choice');
+  console.log('  - Filesystem: Long-running servers, Node.js only (import from @zenmanage/sdk/node)');
+  console.log('  - Custom: Use .withCache() for Redis, IndexedDB, or other backends');
   console.log('  - Null: Testing, debugging, always need fresh data');
   console.log('\nTTL Selection Guide:');
   console.log('  - Short (60s): Frequently changing flags');

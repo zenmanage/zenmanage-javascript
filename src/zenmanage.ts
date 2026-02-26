@@ -3,7 +3,7 @@ import { ConfigurationError } from './errors';
 import { FlagManager } from './flag-manager';
 import { ApiClient } from './api-client';
 import { RuleEngine } from './rule-engine';
-import { InMemoryCache, NullCache, FileSystemCache, type Cache } from './cache';
+import { InMemoryCache, NullCache, type Cache } from './cache';
 
 /**
  * Main entry point for the Zenmanage SDK
@@ -50,12 +50,17 @@ export class Zenmanage {
    * Create a cache instance based on configuration
    */
   private createCache(config: Config): Cache {
+    // If a custom cache instance is provided, use it directly
+    if (config.customCache) {
+      return config.customCache;
+    }
+
     switch (config.cacheBackend) {
       case 'filesystem':
-        if (!config.cacheDirectory) {
-          throw new ConfigurationError('Cache directory required for filesystem cache');
-        }
-        return new FileSystemCache(config.cacheDirectory);
+        throw new ConfigurationError(
+          'Filesystem cache requires a custom cache instance. ' +
+            'Import FileSystemCache from "@zenmanage/sdk/node" and pass it via .withCache(new FileSystemCache(dir))'
+        );
 
       case 'memory':
         return new InMemoryCache();
