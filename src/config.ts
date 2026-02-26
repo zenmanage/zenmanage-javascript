@@ -150,7 +150,11 @@ export class ConfigBuilder {
       throw new ConfigurationError('Environment token is required');
     }
 
-    if (this.config.cacheBackend === 'filesystem' && !this.config.cacheDirectory && !this.config.customCache) {
+    if (
+      this.config.cacheBackend === 'filesystem' &&
+      !this.config.cacheDirectory &&
+      !this.config.customCache
+    ) {
       throw new ConfigurationError('Cache directory is required for filesystem cache');
     }
 

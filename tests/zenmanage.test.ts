@@ -52,7 +52,9 @@ describe('Zenmanage', () => {
         .build();
 
       expect(() => new Zenmanage(config)).toThrow(ConfigurationError);
-      expect(() => new Zenmanage(config)).toThrow('Filesystem cache requires a custom cache instance');
+      expect(() => new Zenmanage(config)).toThrow(
+        'Filesystem cache requires a custom cache instance'
+      );
     });
 
     it('should throw error for invalid cache backend', () => {

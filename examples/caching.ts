@@ -197,7 +197,9 @@ async function main() {
   console.log('Examples completed!');
   console.log('\nCache Selection Guide:');
   console.log('  - Memory: Most applications, serverless, browsers, default choice');
-  console.log('  - Filesystem: Long-running servers, Node.js only (import from @zenmanage/sdk/node)');
+  console.log(
+    '  - Filesystem: Long-running servers, Node.js only (import from @zenmanage/sdk/node)'
+  );
   console.log('  - Custom: Use .withCache() for Redis, IndexedDB, or other backends');
   console.log('  - Null: Testing, debugging, always need fresh data');
   console.log('\nTTL Selection Guide:');
