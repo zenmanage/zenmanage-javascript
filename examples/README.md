@@ -42,6 +42,9 @@ Using default values with inline defaults and DefaultsCollection.
 ### caching.ts
 Different cache backend configurations and their use cases.
 
+### percentage-rollouts.ts
+SDK-side percentage rollouts with automatic CRC32B bucketing.
+
 ## Note
 
 These examples assume you have flags set up in your Zenmanage dashboard. You may need to adjust flag keys to match your configuration.

@@ -1,4 +1,4 @@
-import type { FlagData, FlagType, FlagValue, Rule, FlagTarget } from './types';
+import type { FlagData, FlagType, FlagValue, Rule, FlagTarget, RolloutData } from './types';
 
 /**
  * Represents a feature flag with its metadata, rules, and target value
@@ -10,7 +10,8 @@ export class Flag {
     private readonly key: string,
     private readonly name: string,
     private readonly target: FlagTarget,
-    private readonly rules: Rule[] = []
+    private readonly rules: Rule[] = [],
+    private readonly rollout?: RolloutData
   ) {}
 
   getVersion(): string {
@@ -35,6 +36,10 @@ export class Flag {
 
   getRules(): Rule[] {
     return this.rules;
+  }
+
+  getRollout(): RolloutData | undefined {
+    return this.rollout;
   }
 
   /**
@@ -128,11 +133,19 @@ export class Flag {
    * Create a Flag from API data
    */
   static fromObject(data: FlagData): Flag {
-    return new Flag(data.version, data.type, data.key, data.name, data.target, data.rules || []);
+    return new Flag(
+      data.version,
+      data.type,
+      data.key,
+      data.name,
+      data.target,
+      data.rules || [],
+      data.rollout
+    );
   }
 
   toJSON(): FlagData {
-    return {
+    const data: FlagData = {
       version: this.version,
       type: this.type,
       key: this.key,
@@ -140,5 +153,11 @@ export class Flag {
       target: this.target,
       rules: this.rules,
     };
+
+    if (this.rollout) {
+      data.rollout = this.rollout;
+    }
+
+    return data;
   }
 }

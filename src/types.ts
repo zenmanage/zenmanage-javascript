@@ -119,6 +119,25 @@ export interface FlagTarget {
 }
 
 /**
+ * Rollout data structure from API
+ *
+ * Present on a flag only when a percentage rollout is active.
+ * Contains a separate target/rules pair and the bucketing parameters.
+ */
+export interface RolloutData {
+  /** The rollout target — same shape as the top-level target */
+  target: FlagTarget;
+  /** Targeting rules specific to the rollout target */
+  rules: Rule[];
+  /** The rollout percentage (0–100) */
+  percentage: number;
+  /** Random 32-character string unique to this rollout, used as the hash seed */
+  salt: string;
+  /** Always "active" when present (paused/completed rollouts are omitted) */
+  status: string;
+}
+
+/**
  * Flag data structure from API
  */
 export interface FlagData {
@@ -128,6 +147,8 @@ export interface FlagData {
   name: string;
   target: FlagTarget;
   rules?: Rule[];
+  /** Present only when a percentage rollout is active */
+  rollout?: RolloutData;
 }
 
 /**

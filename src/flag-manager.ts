@@ -6,6 +6,7 @@ import { ApiClient } from './api-client';
 import { RuleEngine } from './rule-engine';
 import { DefaultsCollection } from './defaults-collection';
 import { EvaluationError } from './errors';
+import { isInBucket } from './rollout';
 
 const CACHE_KEY = 'zenmanage_rules';
 
@@ -173,14 +174,49 @@ export class FlagManager {
   }
 
   /**
-   * Evaluate a flag against the current context
+   * Evaluate a flag against the current context.
+   *
+   * When a rollout is active, the SDK determines which target/rules pair to use
+   * by bucketing the context identifier against the rollout percentage.
    */
   private evaluateFlag(flag: Flag): Flag {
-    const rules = flag.getRules();
+    const rollout = flag.getRollout();
+    let target: FlagTarget;
+    let rules: import('./types').Rule[];
+
+    if (rollout) {
+      // Rollout is active — determine which target to use via bucketing
+      const contextIdentifier = this.context.getIdentifier() ?? null;
+      const inBucket = isInBucket(rollout.salt, contextIdentifier, rollout.percentage);
+
+      if (inBucket) {
+        // Context is in the rollout bucket — use rollout target & rules
+        target = rollout.target;
+        rules = rollout.rules || [];
+      } else {
+        // Context is outside the rollout bucket — use fallback target & rules
+        target = flag.getTarget();
+        rules = flag.getRules();
+      }
+    } else {
+      // No rollout — evaluate normally
+      target = flag.getTarget();
+      rules = flag.getRules();
+    }
 
     if (rules.length === 0) {
-      // No rules, return the flag as-is
-      return flag;
+      // No rules, return a flag with the selected target
+      if (target === flag.getTarget() && !rollout) {
+        return flag;
+      }
+      return new Flag(
+        flag.getVersion(),
+        flag.getType(),
+        flag.getKey(),
+        flag.getName(),
+        target,
+        rules
+      );
     }
 
     // Evaluate rules against context
@@ -189,10 +225,10 @@ export class FlagManager {
     if (matchedRule) {
       // Create a new flag with the matched rule's value as target
       const newTarget: FlagTarget = {
-        version: flag.getTarget().version,
-        expired_at: flag.getTarget().expired_at,
-        published_at: flag.getTarget().published_at,
-        scheduled_at: flag.getTarget().scheduled_at,
+        version: target.version,
+        expired_at: target.expired_at,
+        published_at: target.published_at,
+        scheduled_at: target.scheduled_at,
         value: matchedRule.value,
       };
 
@@ -206,8 +242,18 @@ export class FlagManager {
       );
     }
 
-    // No rule matched, return original flag
-    return flag;
+    // No rule matched, return flag with selected target
+    if (target === flag.getTarget() && !rollout) {
+      return flag;
+    }
+    return new Flag(
+      flag.getVersion(),
+      flag.getType(),
+      flag.getKey(),
+      flag.getName(),
+      target,
+      rules
+    );
   }
 
   /**

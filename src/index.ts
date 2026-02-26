@@ -9,6 +9,7 @@ export { Context, Attribute, Value } from './context';
 export { Flag } from './flag';
 export { DefaultsCollection } from './defaults-collection';
 export { FlagManager } from './flag-manager';
+export { isInBucket, crc32b } from './rollout';
 
 // Cache exports
 export { InMemoryCache, NullCache, FileSystemCache } from './cache';
@@ -33,6 +34,7 @@ export type {
   ContextAttribute,
   ContextValue,
   FlagData,
+  RolloutData,
   Rule,
   RuleCondition,
   RulesResponse,

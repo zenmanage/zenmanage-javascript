@@ -111,6 +111,38 @@ if (variant.asString() === 'one-page') {
 }
 ```
 
+### Percentage Rollouts
+
+Gradually roll out features to a percentage of your users. The SDK handles bucketing automatically using a deterministic CRC32B hash — no manual bucket logic needed.
+
+```typescript
+import { Context } from '@zenmanage/sdk';
+
+// Just provide a context with an identifier — the SDK does the rest
+const context = Context.single('user', userId);
+
+const flag = await zenmanage.flags()
+  .withContext(context)
+  .single('new-checkout-flow');
+
+if (flag.isEnabled()) {
+  // This user is in the rollout percentage
+  renderNewCheckout();
+} else {
+  // This user is outside the rollout
+  renderClassicCheckout();
+}
+```
+
+**How it works:**
+- Configure the rollout percentage (0–100%) and a unique salt in the Zenmanage dashboard
+- The SDK hashes `salt:contextIdentifier` to deterministically assign each user to a bucket (0–99)
+- Users whose bucket is below the percentage get the rollout value; others get the fallback
+- The same user always gets the same result (deterministic), and increasing the percentage never removes previously included users
+- Rollout rules can further refine targeting within the rollout group (e.g., only US users in the rollout)
+
+> **Note:** A context `identifier` is required for bucketing. Without one, the user always receives the fallback value.
+
 ### Feature Toggles by Organization
 
 ```typescript
@@ -629,6 +661,7 @@ See the [examples](./examples) directory for more examples:
 - [ab-testing.ts](./examples/ab-testing.ts) - A/B testing example
 - [defaults.ts](./examples/defaults.ts) - Using default values
 - [caching.ts](./examples/caching.ts) - Cache configuration examples
+- [percentage-rollouts.ts](./examples/percentage-rollouts.ts) - SDK-side percentage rollouts
 
 ## Contributing
 
