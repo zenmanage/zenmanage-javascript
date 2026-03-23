@@ -7,7 +7,7 @@ import { InMemoryCache } from '../src/cache';
 describe('Zenmanage', () => {
   describe('constructor', () => {
     it('should create instance with valid config', () => {
-      const config = ConfigBuilder.create().withEnvironmentToken('tok_test_123').build();
+      const config = ConfigBuilder.create().withEnvironmentToken('srv_test_123').build();
 
       const zenmanage = new Zenmanage(config);
       expect(zenmanage).toBeInstanceOf(Zenmanage);
@@ -15,7 +15,7 @@ describe('Zenmanage', () => {
 
     it('should create instance with memory cache', () => {
       const config = ConfigBuilder.create()
-        .withEnvironmentToken('tok_test_123')
+        .withEnvironmentToken('srv_test_123')
         .withCacheBackend('memory')
         .build();
 
@@ -25,7 +25,7 @@ describe('Zenmanage', () => {
 
     it('should create instance with null cache', () => {
       const config = ConfigBuilder.create()
-        .withEnvironmentToken('tok_test_123')
+        .withEnvironmentToken('srv_test_123')
         .withCacheBackend('null')
         .build();
 
@@ -35,7 +35,7 @@ describe('Zenmanage', () => {
 
     it('should create instance with custom cache', () => {
       const config = ConfigBuilder.create()
-        .withEnvironmentToken('tok_test_123')
+        .withEnvironmentToken('srv_test_123')
         .withCache(new InMemoryCache())
         .build();
 
@@ -46,7 +46,7 @@ describe('Zenmanage', () => {
 
     it('should throw error for filesystem cache without custom cache instance', () => {
       const config = ConfigBuilder.create()
-        .withEnvironmentToken('tok_test_123')
+        .withEnvironmentToken('srv_test_123')
         .withCacheBackend('filesystem')
         .withCacheDirectory('/tmp/zenmanage-test')
         .build();
@@ -59,7 +59,7 @@ describe('Zenmanage', () => {
 
     it('should throw error for invalid cache backend', () => {
       const config = {
-        environmentToken: 'tok_test_123',
+        environmentToken: 'srv_test_123',
         cacheBackend: 'invalid' as any,
         logger: {
           debug: () => {},
@@ -76,7 +76,7 @@ describe('Zenmanage', () => {
 
   describe('flags', () => {
     it('should return FlagManager instance', () => {
-      const config = ConfigBuilder.create().withEnvironmentToken('tok_test_123').build();
+      const config = ConfigBuilder.create().withEnvironmentToken('srv_test_123').build();
 
       const zenmanage = new Zenmanage(config);
       const flagManager = zenmanage.flags();
@@ -88,7 +88,7 @@ describe('Zenmanage', () => {
     });
 
     it('should return the same FlagManager instance', () => {
-      const config = ConfigBuilder.create().withEnvironmentToken('tok_test_123').build();
+      const config = ConfigBuilder.create().withEnvironmentToken('srv_test_123').build();
 
       const zenmanage = new Zenmanage(config);
       const flags1 = zenmanage.flags();

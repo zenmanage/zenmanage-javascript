@@ -36,6 +36,12 @@ npm install @zenmanage/sdk
 **Browser Requirements**: Modern browsers with fetch API support (or use a polyfill)
 **Node.js Requirements**: Node.js 16+ (requires native fetch API)
 
+## Key Compatibility
+
+- Browser/client runtime: client keys prefixed with `cli_`
+- Node.js/server runtime: server keys prefixed with `srv_`
+- Mobile keys (`mob_`) are rejected by this SDK at initialization
+
 ## Get Started in 60 Seconds
 
 ### 1. Get your environment token from [zenmanage.com](https://zenmanage.com)
@@ -47,7 +53,7 @@ import { Zenmanage, ConfigBuilder } from '@zenmanage/sdk';
 
 const zenmanage = new Zenmanage(
   ConfigBuilder.create()
-    .withEnvironmentToken('tok_your_token_here')
+    .withEnvironmentToken('cli_your_client_key_here')
     .build()
 );
 ```
@@ -77,7 +83,7 @@ import { Zenmanage, ConfigBuilder, Context } from '@zenmanage/sdk';
 
 const zenmanage = new Zenmanage(
   ConfigBuilder.create()
-    .withEnvironmentToken('tok_your_token_here')
+    .withEnvironmentToken('cli_your_client_key_here')
     .build()
 );
 
@@ -204,7 +210,8 @@ for (const flag of allFlags) {
 
 ```typescript
 const config = ConfigBuilder.create()
-  .withEnvironmentToken('tok_your_token_here')  // Required
+  .withEnvironmentToken('cli_your_client_key_here') // Browser/client runtime
+  // For Node.js/server runtime use: .withEnvironmentToken('srv_your_server_key_here')
   .withCacheTtl(3600)                            // Cache TTL in seconds (default: 3600)
   .withCacheBackend('memory')                    // 'memory' or 'null' (default: 'memory')
   .withCache(customCacheInstance)                 // Custom Cache implementation (overrides cacheBackend)
@@ -238,7 +245,7 @@ Best for: Most applications, serverless functions, browsers
 
 ```typescript
 ConfigBuilder.create()
-  .withEnvironmentToken('tok_your_token_here')
+  .withEnvironmentToken('cli_your_client_key_here')
   .withCacheBackend('memory')
   .build();
 ```
@@ -254,7 +261,7 @@ The filesystem cache is available from the `@zenmanage/sdk/node` entry point:
 import { Zenmanage, ConfigBuilder, FileSystemCache } from '@zenmanage/sdk/node';
 
 const config = ConfigBuilder.create()
-  .withEnvironmentToken('tok_your_token_here')
+  .withEnvironmentToken('srv_your_server_key_here')
   .withCache(new FileSystemCache('/tmp/zenmanage-cache'))
   .withCacheTtl(7200)
   .build();
@@ -278,7 +285,7 @@ class RedisCache implements Cache {
 }
 
 const config = ConfigBuilder.create()
-  .withEnvironmentToken('tok_your_token_here')
+  .withEnvironmentToken('cli_your_client_key_here')
   .withCache(new RedisCache())
   .build();
 ```
@@ -288,7 +295,7 @@ Best for: Testing, debugging
 
 ```typescript
 ConfigBuilder.create()
-  .withEnvironmentToken('tok_your_token_here')
+  .withEnvironmentToken('cli_your_client_key_here')
   .withCacheBackend('null')
   .build();
 ```
@@ -426,7 +433,7 @@ const customLogger: Logger = {
 };
 
 const config = ConfigBuilder.create()
-  .withEnvironmentToken('tok_your_token_here')
+  .withEnvironmentToken('srv_your_server_key_here')
   .withLogger(customLogger)
   .build();
 ```
@@ -463,7 +470,7 @@ import type {
 } from '@zenmanage/sdk';
 
 const config: Config = {
-  environmentToken: 'tok_test',
+  environmentToken: 'srv_test',
   cacheTtl: 3600,
   cacheBackend: 'memory',
 };
@@ -482,7 +489,7 @@ The default `@zenmanage/sdk` entry point is fully browser-safe — it contains n
 
     const zenmanage = new Zenmanage(
       ConfigBuilder.create()
-        .withEnvironmentToken('tok_your_token_here')
+        .withEnvironmentToken('srv_your_server_key_here')
         .build()
     );
 
@@ -505,7 +512,7 @@ import { Zenmanage, ConfigBuilder } from '@zenmanage/sdk';
 
 const zenmanage = new Zenmanage(
   ConfigBuilder.create()
-    .withEnvironmentToken('tok_your_token_here')
+    .withEnvironmentToken('srv_your_server_key_here')
     .build()
 );
 ```
@@ -561,7 +568,7 @@ vi.mock('@zenmanage/sdk', async () => {
 
 test('feature flag enabled', async () => {
   const zenmanage = new Zenmanage(
-    ConfigBuilder.create().withEnvironmentToken('tok_test').build()
+    ConfigBuilder.create().withEnvironmentToken('srv_test').build()
   );
 
   const flag = await zenmanage.flags().single('test-flag');
@@ -590,7 +597,7 @@ import { Zenmanage, ConfigBuilder } from '@zenmanage/sdk';
 
 export const zenmanage = new Zenmanage(
   ConfigBuilder.create()
-    .withEnvironmentToken('tok_your_token_here')
+    .withEnvironmentToken('srv_your_server_key_here')
     .build()
 );
 

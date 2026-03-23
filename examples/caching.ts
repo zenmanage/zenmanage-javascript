@@ -17,7 +17,7 @@ async function main() {
 
   const memoryZenmanage = new Zenmanage(
     ConfigBuilder.create()
-      .withEnvironmentToken(process.env.ZENMANAGE_ENVIRONMENT_TOKEN || 'tok_your_token_here')
+      .withEnvironmentToken(process.env.ZENMANAGE_ENVIRONMENT_TOKEN || 'srv_your_server_key_here')
       .withCacheBackend('memory')
       .withCacheTtl(3600) // 1 hour
       .build()
@@ -51,7 +51,7 @@ async function main() {
 
   const filesystemZenmanage = new Zenmanage(
     ConfigBuilder.create()
-      .withEnvironmentToken(process.env.ZENMANAGE_ENVIRONMENT_TOKEN || 'tok_your_token_here')
+      .withEnvironmentToken(process.env.ZENMANAGE_ENVIRONMENT_TOKEN || 'srv_your_server_key_here')
       .withCache(new FileSystemCache(cacheDir))
       .withCacheTtl(7200) // 2 hours
       .build()
@@ -77,7 +77,7 @@ async function main() {
 
   const nullCacheZenmanage = new Zenmanage(
     ConfigBuilder.create()
-      .withEnvironmentToken(process.env.ZENMANAGE_ENVIRONMENT_TOKEN || 'tok_your_token_here')
+      .withEnvironmentToken(process.env.ZENMANAGE_ENVIRONMENT_TOKEN || 'srv_your_server_key_here')
       .withCacheBackend('null')
       .build()
   );
@@ -101,7 +101,7 @@ async function main() {
   // Short TTL for frequently changing flags
   const shortTtlZenmanage = new Zenmanage(
     ConfigBuilder.create()
-      .withEnvironmentToken(process.env.ZENMANAGE_ENVIRONMENT_TOKEN || 'tok_your_token_here')
+      .withEnvironmentToken(process.env.ZENMANAGE_ENVIRONMENT_TOKEN || 'srv_your_server_key_here')
       .withCacheBackend('memory')
       .withCacheTtl(60) // 1 minute
       .build()
@@ -114,7 +114,7 @@ async function main() {
   // Long TTL for stable flags
   const longTtlZenmanage = new Zenmanage(
     ConfigBuilder.create()
-      .withEnvironmentToken(process.env.ZENMANAGE_ENVIRONMENT_TOKEN || 'tok_your_token_here')
+      .withEnvironmentToken(process.env.ZENMANAGE_ENVIRONMENT_TOKEN || 'srv_your_server_key_here')
       .withCacheBackend('memory')
       .withCacheTtl(86400) // 24 hours
       .build()
@@ -129,7 +129,7 @@ async function main() {
 
   const zenmanage = new Zenmanage(
     ConfigBuilder.create()
-      .withEnvironmentToken(process.env.ZENMANAGE_ENVIRONMENT_TOKEN || 'tok_your_token_here')
+      .withEnvironmentToken(process.env.ZENMANAGE_ENVIRONMENT_TOKEN || 'srv_your_server_key_here')
       .withCacheBackend('memory')
       .build()
   );

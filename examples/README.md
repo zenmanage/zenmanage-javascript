@@ -11,7 +11,7 @@ npm install
 
 2. Set your environment token:
 ```bash
-export ZENMANAGE_ENVIRONMENT_TOKEN="tok_your_token_here"
+export ZENMANAGE_ENVIRONMENT_TOKEN="srv_your_server_key_here"
 ```
 
 3. Run an example:

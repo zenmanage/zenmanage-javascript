@@ -2,6 +2,13 @@ import type { Config, Logger } from './types';
 import type { Cache } from './cache/cache.interface';
 import { ConfigurationError } from './errors';
 
+type Runtime = 'node' | 'browser';
+type KeyType = 'server' | 'client' | 'mobile' | 'unknown';
+
+const SERVER_KEY_PREFIX = 'srv_';
+const CLIENT_KEY_PREFIX = 'cli_';
+const MOBILE_KEY_PREFIX = 'mob_';
+
 /**
  * Default logger that does nothing (null logger pattern)
  */
@@ -150,6 +157,8 @@ export class ConfigBuilder {
       throw new ConfigurationError('Environment token is required');
     }
 
+    this.validateEnvironmentTokenForRuntime(this.config.environmentToken);
+
     if (
       this.config.cacheBackend === 'filesystem' &&
       !this.config.cacheDirectory &&
@@ -164,5 +173,73 @@ export class ConfigBuilder {
     }
 
     return this.config as Config;
+  }
+
+  /**
+   * Validate that the token type matches the current runtime.
+   */
+  private validateEnvironmentTokenForRuntime(token: string): void {
+    const runtime = this.detectRuntime();
+    const keyType = this.detectKeyType(token);
+
+    if (keyType === 'unknown') {
+      throw new ConfigurationError(
+        `Invalid environment token format. Expected one of: ${SERVER_KEY_PREFIX}, ${CLIENT_KEY_PREFIX}, or ${MOBILE_KEY_PREFIX}.`
+      );
+    }
+
+    if (runtime === 'node' && keyType !== 'server') {
+      throw new ConfigurationError(
+        `Invalid environment token for Node.js runtime: ${this.describeKeyType(keyType)} provided. Use a server key (${SERVER_KEY_PREFIX}...).`
+      );
+    }
+
+    if (runtime === 'browser' && keyType !== 'client') {
+      throw new ConfigurationError(
+        `Invalid environment token for browser runtime: ${this.describeKeyType(keyType)} provided. Use a client key (${CLIENT_KEY_PREFIX}...).`
+      );
+    }
+  }
+
+  /**
+   * Detect runtime in a way that works for both browser and Node.js tests.
+   */
+  private detectRuntime(): Runtime {
+    if (typeof window !== 'undefined' || typeof document !== 'undefined') {
+      return 'browser';
+    }
+
+    if (typeof process !== 'undefined' && !!process.versions?.node) {
+      return 'node';
+    }
+
+    return 'node';
+  }
+
+  private detectKeyType(token: string): KeyType {
+    if (token.startsWith(SERVER_KEY_PREFIX)) {
+      return 'server';
+    }
+
+    if (token.startsWith(CLIENT_KEY_PREFIX)) {
+      return 'client';
+    }
+
+    if (token.startsWith(MOBILE_KEY_PREFIX)) {
+      return 'mobile';
+    }
+
+    return 'unknown';
+  }
+
+  private describeKeyType(keyType: Exclude<KeyType, 'unknown'>): string {
+    switch (keyType) {
+      case 'server':
+        return 'server key';
+      case 'client':
+        return 'client key';
+      case 'mobile':
+        return 'mobile key';
+    }
   }
 }

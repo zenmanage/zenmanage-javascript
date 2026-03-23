@@ -12,7 +12,7 @@ interface FlagMetadataResponse {
   };
 }
 
-const SDK_VERSION = '1.0.0';
+const SDK_VERSION = '3.0.0';
 const CLIENT_AGENT = 'zenmanage-javascript';
 const DEFAULT_API_ENDPOINT = 'https://api.zenmanage.com';
 const RULES_PATH = '/v1/flag-json';

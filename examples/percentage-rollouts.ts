@@ -14,7 +14,7 @@ async function main() {
 
   const zenmanage = new Zenmanage(
     ConfigBuilder.create()
-      .withEnvironmentToken(process.env.ZENMANAGE_ENVIRONMENT_TOKEN || 'tok_your_token_here')
+      .withEnvironmentToken(process.env.ZENMANAGE_ENVIRONMENT_TOKEN || 'srv_your_server_key_here')
       .build()
   );
 
