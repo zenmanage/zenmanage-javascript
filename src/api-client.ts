@@ -124,8 +124,8 @@ export class ApiClient {
       const url = `${this.baseUrl}/v1/flags/${key}/usage`;
       const headers = { ...this.headers };
 
-      // Send context as header if provided
-      if (context) {
+      // Send context as header only when it carries identifying targeting data
+      if (context && this.shouldSendContext(context)) {
         headers['X-ZENMANAGE-CONTEXT'] = JSON.stringify(context.toJSON());
       }
 
@@ -142,6 +142,15 @@ export class ApiClient {
       // Silently ignore usage reporting errors
       this.logger.debug('Failed to report usage', { error: (error as Error).message });
     }
+  }
+
+  private shouldSendContext(context: Context): boolean {
+    return !(
+      context.getType() === 'anonymous' &&
+      context.getName() === undefined &&
+      context.getIdentifier() === undefined &&
+      context.getAttributes().length === 0
+    );
   }
 
   /**

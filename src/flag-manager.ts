@@ -48,7 +48,7 @@ export class FlagManager {
     for (const flag of this.flags || []) {
       if (flag.getKey() === key) {
         // Report usage for this flag
-        await this.reportUsage(key, this.context);
+        await this.reportUsage(key, this.getUsageContext());
 
         return this.evaluateFlag(flag);
       }
@@ -58,7 +58,7 @@ export class FlagManager {
     if (defaultValue !== undefined) {
       const flagFromDefault = this.createFlagFromDefault(key, defaultValue);
       // Report usage even for default values
-      await this.reportUsage(key, this.context);
+      await this.reportUsage(key, this.getUsageContext());
 
       return flagFromDefault;
     }
@@ -69,7 +69,7 @@ export class FlagManager {
       if (defaultVal !== undefined) {
         const flagFromDefault = this.createFlagFromDefault(key, defaultVal);
         // Report usage even for default values
-        await this.reportUsage(key, this.context);
+        await this.reportUsage(key, this.getUsageContext());
 
         return flagFromDefault;
       }
@@ -103,6 +103,19 @@ export class FlagManager {
    */
   async reportUsage(key: string, context?: Context): Promise<void> {
     await this.apiClient.reportUsage(key, context);
+  }
+
+  private getUsageContext(): Context | undefined {
+    if (
+      this.context.getType() === 'anonymous' &&
+      this.context.getName() === undefined &&
+      this.context.getIdentifier() === undefined &&
+      this.context.getAttributes().length === 0
+    ) {
+      return undefined;
+    }
+
+    return this.context;
   }
 
   /**
