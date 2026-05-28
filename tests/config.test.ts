@@ -170,7 +170,6 @@ describe('ConfigBuilder', () => {
       expect(() => builder.build()).toThrow('Invalid environment token for browser runtime');
       expect(() => builder.build()).toThrow('Use a client key (cli_...)');
     });
-
   });
 
   describe('fromEnvironment', () => {
