@@ -118,7 +118,7 @@ describe('FlagManager with rollouts', () => {
         key: 'rules-no-rollout',
         rules: [
           {
-            clauses: [{ attribute: 'country', operator: 'equals', value: 'US' }],
+            clauses: [{ attribute: 'country', operator: 'equal', value: 'US' }],
             value: { value: { boolean: true } },
           },
         ],
@@ -236,7 +236,7 @@ describe('FlagManager with rollouts', () => {
         rules: [
           // Fallback rules — should NOT be used when in rollout bucket
           {
-            clauses: [{ attribute: 'country', operator: 'equals', value: 'US' }],
+            clauses: [{ attribute: 'country', operator: 'equal', value: 'US' }],
             value: { value: { string: 'fallback-rule-match' } },
           },
         ],
@@ -247,7 +247,7 @@ describe('FlagManager with rollouts', () => {
           },
           rules: [
             {
-              clauses: [{ attribute: 'country', operator: 'equals', value: 'US' }],
+              clauses: [{ attribute: 'country', operator: 'equal', value: 'US' }],
               value: { value: { string: 'rollout-rule-match' } },
             },
           ],
@@ -279,7 +279,7 @@ describe('FlagManager with rollouts', () => {
         type: 'string',
         rules: [
           {
-            clauses: [{ attribute: 'country', operator: 'equals', value: 'US' }],
+            clauses: [{ attribute: 'country', operator: 'equal', value: 'US' }],
             value: { value: { string: 'fallback-rule-match' } },
           },
         ],
@@ -290,7 +290,7 @@ describe('FlagManager with rollouts', () => {
           },
           rules: [
             {
-              clauses: [{ attribute: 'country', operator: 'equals', value: 'US' }],
+              clauses: [{ attribute: 'country', operator: 'equal', value: 'US' }],
               value: { value: { string: 'rollout-rule-match' } },
             },
           ],
@@ -327,7 +327,7 @@ describe('FlagManager with rollouts', () => {
           },
           rules: [
             {
-              clauses: [{ attribute: 'country', operator: 'equals', value: 'JP' }],
+              clauses: [{ attribute: 'country', operator: 'equal', value: 'JP' }],
               value: { value: { string: 'rollout-rule-match' } },
             },
           ],
@@ -359,7 +359,7 @@ describe('FlagManager with rollouts', () => {
         type: 'string',
         rules: [
           {
-            clauses: [{ attribute: 'country', operator: 'equals', value: 'JP' }],
+            clauses: [{ attribute: 'country', operator: 'equal', value: 'JP' }],
             value: { value: { string: 'fallback-rule-match' } },
           },
         ],

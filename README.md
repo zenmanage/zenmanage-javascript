@@ -2,6 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/@zenmanage%2Fsdk.svg)](https://www.npmjs.com/package/@zenmanage/sdk)
 [![Build Status](https://github.com/zenmanage/zenmanage-javascript/actions/workflows/ci.yml/badge.svg)](https://github.com/zenmanage/zenmanage-javascript)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/4d7fdf1bbcfe42e897358f2aa7032880)](https://app.codacy.com/gh/zenmanage/zenmanage-javascript/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 
 Add feature flags to your JavaScript/TypeScript application in minutes. Control feature rollouts, A/B test, and manage configurations without deploying code. Works in both Node.js and browsers!

@@ -51,36 +51,52 @@ export class RuleEngine {
     const attribute = context.getAttribute(clause.attribute);
 
     if (!attribute) {
-      return false;
+      switch (clause.operator) {
+        case 'isnull':
+        case 'notequal':
+        case 'notin':
+        case 'notcontains':
+        case 'notstartswith':
+        case 'notendswith':
+          return true;
+        default:
+          return false;
+      }
     }
 
     const attributeValues = attribute.getValues();
     const attributeClauseValue = this.toAttributeClauseValue(clause.value);
 
     switch (clause.operator) {
-      case 'equals':
+      case 'equal':
         return this.evaluateEquals(attributeValues, attributeClauseValue);
 
-      case 'not_equals':
+      case 'notequal':
         return !this.evaluateEquals(attributeValues, attributeClauseValue);
 
       case 'contains':
         return this.evaluateContains(attributeValues, attributeClauseValue);
 
-      case 'not_contains':
+      case 'notcontains':
         return !this.evaluateContains(attributeValues, attributeClauseValue);
 
       case 'in':
         return this.evaluateIn(attributeValues, attributeClauseValue);
 
-      case 'not_in':
+      case 'notin':
         return !this.evaluateIn(attributeValues, attributeClauseValue);
 
-      case 'starts_with':
+      case 'startswith':
         return this.evaluateStartsWith(attributeValues, attributeClauseValue);
 
-      case 'ends_with':
+      case 'notstartswith':
+        return !this.evaluateStartsWith(attributeValues, attributeClauseValue);
+
+      case 'endswith':
         return this.evaluateEndsWith(attributeValues, attributeClauseValue);
+
+      case 'notendswith':
+        return !this.evaluateEndsWith(attributeValues, attributeClauseValue);
 
       case 'gt':
         return this.evaluateGreaterThan(attributeValues, attributeClauseValue);
@@ -93,6 +109,12 @@ export class RuleEngine {
 
       case 'lte':
         return this.evaluateLessThanOrEqual(attributeValues, attributeClauseValue);
+
+      case 'isnull':
+        return attributeValues.every((v) => v === '');
+
+      case 'notnull':
+        return attributeValues.some((v) => v !== '');
 
       default:
         return false;
@@ -122,41 +144,17 @@ export class RuleEngine {
     const values = [identifier];
 
     switch (clause.operator) {
-      case 'equals':
+      case 'equal':
         return this.evaluateEquals(values, matchingTargets);
 
-      case 'not_equals':
+      case 'notequal':
         return !this.evaluateEquals(values, matchingTargets);
-
-      case 'contains':
-        return this.evaluateContains(values, matchingTargets);
-
-      case 'not_contains':
-        return !this.evaluateContains(values, matchingTargets);
 
       case 'in':
         return this.evaluateIn(values, matchingTargets);
 
-      case 'not_in':
+      case 'notin':
         return !this.evaluateIn(values, matchingTargets);
-
-      case 'starts_with':
-        return this.evaluateStartsWith(values, matchingTargets);
-
-      case 'ends_with':
-        return this.evaluateEndsWith(values, matchingTargets);
-
-      case 'gt':
-        return this.evaluateGreaterThan(values, matchingTargets);
-
-      case 'gte':
-        return this.evaluateGreaterThanOrEqual(values, matchingTargets);
-
-      case 'lt':
-        return this.evaluateLessThan(values, matchingTargets);
-
-      case 'lte':
-        return this.evaluateLessThanOrEqual(values, matchingTargets);
 
       default:
         return false;

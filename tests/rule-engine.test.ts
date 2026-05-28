@@ -16,11 +16,11 @@ describe('RuleEngine', () => {
     it('should return first matching rule', () => {
       const rules: Rule[] = [
         {
-          clauses: [{ attribute: 'country', operator: 'equals', value: 'US' }],
+          clauses: [{ attribute: 'country', operator: 'equal', value: 'US' }],
           value: { value: { boolean: true } },
         },
         {
-          clauses: [{ attribute: 'country', operator: 'equals', value: 'CA' }],
+          clauses: [{ attribute: 'country', operator: 'equal', value: 'CA' }],
           value: { value: { boolean: false } },
         },
       ];
@@ -35,7 +35,7 @@ describe('RuleEngine', () => {
     it('should return null when no rules match', () => {
       const rules: Rule[] = [
         {
-          clauses: [{ attribute: 'country', operator: 'equals', value: 'US' }],
+          clauses: [{ attribute: 'country', operator: 'equal', value: 'US' }],
           value: { value: { boolean: true } },
         },
       ];
@@ -52,7 +52,7 @@ describe('RuleEngine', () => {
     it('should match equal values', () => {
       const rules: Rule[] = [
         {
-          clauses: [{ attribute: 'plan', operator: 'equals', value: 'premium' }],
+          clauses: [{ attribute: 'plan', operator: 'equal', value: 'premium' }],
           value: { value: { boolean: true } },
         },
       ];
@@ -67,7 +67,7 @@ describe('RuleEngine', () => {
     it('should not match different values', () => {
       const rules: Rule[] = [
         {
-          clauses: [{ attribute: 'plan', operator: 'equals', value: 'premium' }],
+          clauses: [{ attribute: 'plan', operator: 'equal', value: 'premium' }],
           value: { value: { boolean: true } },
         },
       ];
@@ -80,11 +80,11 @@ describe('RuleEngine', () => {
     });
   });
 
-  describe('not_equals operator', () => {
+  describe('notequal operator', () => {
     it('should match different values', () => {
       const rules: Rule[] = [
         {
-          clauses: [{ attribute: 'plan', operator: 'not_equals', value: 'basic' }],
+          clauses: [{ attribute: 'plan', operator: 'notequal', value: 'basic' }],
           value: { value: { boolean: true } },
         },
       ];
@@ -111,6 +111,38 @@ describe('RuleEngine', () => {
 
       const result = engine.evaluate(rules, context);
       expect(result).toBe(rules[0]);
+    });
+  });
+
+  describe('notcontains operator', () => {
+    it('should match when value does not contain substring', () => {
+      const rules: Rule[] = [
+        {
+          clauses: [{ attribute: 'email', operator: 'notcontains', value: '@other.com' }],
+          value: { value: { boolean: true } },
+        },
+      ];
+
+      const context = new Context('user');
+      context.addAttribute(new Attribute('email', ['john@acme.com']));
+
+      const result = engine.evaluate(rules, context);
+      expect(result).toBe(rules[0]);
+    });
+
+    it('should not match when value contains substring', () => {
+      const rules: Rule[] = [
+        {
+          clauses: [{ attribute: 'email', operator: 'notcontains', value: '@acme.com' }],
+          value: { value: { boolean: true } },
+        },
+      ];
+
+      const context = new Context('user');
+      context.addAttribute(new Attribute('email', ['john@acme.com']));
+
+      const result = engine.evaluate(rules, context);
+      expect(result).toBeNull();
     });
   });
 
@@ -146,11 +178,11 @@ describe('RuleEngine', () => {
     });
   });
 
-  describe('starts_with operator', () => {
+  describe('startswith operator', () => {
     it('should match when value starts with prefix', () => {
       const rules: Rule[] = [
         {
-          clauses: [{ attribute: 'user_id', operator: 'starts_with', value: 'user-' }],
+          clauses: [{ attribute: 'user_id', operator: 'startswith', value: 'user-' }],
           value: { value: { boolean: true } },
         },
       ];
@@ -163,11 +195,45 @@ describe('RuleEngine', () => {
     });
   });
 
-  describe('ends_with operator', () => {
+  describe('notstartswith operator', () => {
+    it('should match when value does not start with prefix', () => {
+      const rules: Rule[] = [
+        {
+          clauses: [{ attribute: 'user_id', operator: 'notstartswith', value: 'admin-' }],
+          value: { value: { boolean: true } },
+        },
+      ];
+
+      const context = new Context('user');
+      context.addAttribute(new Attribute('user_id', ['user-12345']));
+
+      const result = engine.evaluate(rules, context);
+      expect(result).toBe(rules[0]);
+    });
+  });
+
+  describe('endswith operator', () => {
     it('should match when value ends with suffix', () => {
       const rules: Rule[] = [
         {
-          clauses: [{ attribute: 'email', operator: 'ends_with', value: '@acme.com' }],
+          clauses: [{ attribute: 'email', operator: 'endswith', value: '@acme.com' }],
+          value: { value: { boolean: true } },
+        },
+      ];
+
+      const context = new Context('user');
+      context.addAttribute(new Attribute('email', ['john@acme.com']));
+
+      const result = engine.evaluate(rules, context);
+      expect(result).toBe(rules[0]);
+    });
+  });
+
+  describe('notendswith operator', () => {
+    it('should match when value does not end with suffix', () => {
+      const rules: Rule[] = [
+        {
+          clauses: [{ attribute: 'email', operator: 'notendswith', value: '@internal.com' }],
           value: { value: { boolean: true } },
         },
       ];
@@ -247,8 +313,8 @@ describe('RuleEngine', () => {
       const rules: Rule[] = [
         {
           clauses: [
-            { attribute: 'country', operator: 'equals', value: 'US' },
-            { attribute: 'plan', operator: 'equals', value: 'premium' },
+            { attribute: 'country', operator: 'equal', value: 'US' },
+            { attribute: 'plan', operator: 'equal', value: 'premium' },
           ],
           value: { value: { boolean: true } },
         },
@@ -278,7 +344,7 @@ describe('RuleEngine', () => {
     it('should not match when attribute is missing', () => {
       const rules: Rule[] = [
         {
-          clauses: [{ attribute: 'nonexistent', operator: 'equals', value: 'value' }],
+          clauses: [{ attribute: 'nonexistent', operator: 'equal', value: 'value' }],
           value: { value: { boolean: true } },
         },
       ];
@@ -286,6 +352,73 @@ describe('RuleEngine', () => {
       const context = new Context('user');
       const result = engine.evaluate(rules, context);
       expect(result).toBeNull();
+    });
+
+    it('should match isnull when attribute is absent', () => {
+      const rules: Rule[] = [
+        {
+          clauses: [{ attribute: 'nonexistent', operator: 'isnull', value: undefined }],
+          value: { value: { boolean: true } },
+        },
+      ];
+
+      const context = new Context('user');
+      const result = engine.evaluate(rules, context);
+      expect(result).not.toBeNull();
+    });
+
+    it('should match isnull when attribute value is empty string', () => {
+      const rules: Rule[] = [
+        {
+          clauses: [{ attribute: 'tag', operator: 'isnull', value: undefined }],
+          value: { value: { boolean: true } },
+        },
+      ];
+
+      const context = new Context('user');
+      context.addAttribute(new Attribute('tag', ['']));
+      const result = engine.evaluate(rules, context);
+      expect(result).not.toBeNull();
+    });
+
+    it('should match notnull when attribute has a value', () => {
+      const rules: Rule[] = [
+        {
+          clauses: [{ attribute: 'tag', operator: 'notnull', value: undefined }],
+          value: { value: { boolean: true } },
+        },
+      ];
+
+      const context = new Context('user');
+      context.addAttribute(new Attribute('tag', ['active']));
+      const result = engine.evaluate(rules, context);
+      expect(result).not.toBeNull();
+    });
+
+    it('should not match notnull when attribute is absent', () => {
+      const rules: Rule[] = [
+        {
+          clauses: [{ attribute: 'nonexistent', operator: 'notnull', value: undefined }],
+          value: { value: { boolean: true } },
+        },
+      ];
+
+      const context = new Context('user');
+      const result = engine.evaluate(rules, context);
+      expect(result).toBeNull();
+    });
+
+    it('should match notequal when attribute is absent', () => {
+      const rules: Rule[] = [
+        {
+          clauses: [{ attribute: 'nonexistent', operator: 'notequal', value: 'x' }],
+          value: { value: { boolean: true } },
+        },
+      ];
+
+      const context = new Context('user');
+      const result = engine.evaluate(rules, context);
+      expect(result).not.toBeNull();
     });
   });
 
@@ -296,7 +429,7 @@ describe('RuleEngine', () => {
           clauses: [
             {
               attribute: 'context',
-              operator: 'equals',
+              operator: 'equal',
               value: { identifier: 'user-123', type: 'user' },
             },
           ],
@@ -316,7 +449,7 @@ describe('RuleEngine', () => {
           clauses: [
             {
               attribute: 'context',
-              operator: 'equals',
+              operator: 'equal',
               value: { identifier: 'user-123', type: 'organization' },
             },
           ],
@@ -336,7 +469,7 @@ describe('RuleEngine', () => {
           clauses: [
             {
               attribute: 'context',
-              operator: 'equals',
+              operator: 'equal',
               value: { identifier: 'shared-id', type: null },
             },
           ],
@@ -356,7 +489,7 @@ describe('RuleEngine', () => {
           clauses: [
             {
               attribute: 'segment',
-              operator: 'equals',
+              operator: 'equal',
               value: { identifier: 'beta-1', type: null },
             },
           ],
