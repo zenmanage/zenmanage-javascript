@@ -2,6 +2,18 @@ import type { Context } from './context';
 import type { Rule, RuleCondition, RuleContextTarget } from './types';
 
 /**
+ * Raw condition shape as delivered by the CDN:
+ *   { selector, selector_subtype?, comparer, values: string[] | CdnTarget[] }
+ * The rule engine normalises this into the internal RuleCondition format before evaluation.
+ */
+interface CdnRuleCondition {
+  selector: string;
+  selector_subtype?: string | null;
+  comparer: string;
+  values?: Array<string | { identifier: string; type?: string | null }>;
+}
+
+/**
  * Rule engine for evaluating flag rules against context
  */
 export class RuleEngine {
@@ -43,7 +55,9 @@ export class RuleEngine {
   /**
    * Evaluate a single clause against context
    */
-  private evaluateClause(clause: RuleCondition, context: Context): boolean {
+  private evaluateClause(rawClause: RuleCondition, context: Context): boolean {
+    const clause = this.normalizeCdnClause(rawClause);
+
     if (clause.attribute === 'context' || clause.attribute === 'segment') {
       return this.evaluateContextClause(clause, context);
     }
@@ -119,6 +133,51 @@ export class RuleEngine {
       default:
         return false;
     }
+  }
+
+  /**
+   * Normalise a condition that may be in CDN format
+   * (selector/selector_subtype/comparer/values) into the internal format
+   * (attribute/operator/value). Conditions already in internal format are
+   * returned unchanged.
+   */
+  private normalizeCdnClause(clause: RuleCondition): RuleCondition {
+    const raw = clause as unknown as CdnRuleCondition;
+    if (raw.selector === undefined) {
+      return clause;
+    }
+
+    const attribute =
+      raw.selector === 'attribute' ? (raw.selector_subtype ?? '') : raw.selector;
+
+    // Normalise operator: lowercase, strip hyphens/spaces/underscores so that
+    // "not_equal" → "notequal", "starts_with" → "startswith", etc.
+    const operator = raw.comparer.toLowerCase().replace(/[-_ ]/g, '');
+
+    const value = this.normalizeCdnValues(raw.values ?? []);
+
+    return { attribute, operator, value };
+  }
+
+  /**
+   * Convert CDN `values` array into the internal clause value type.
+   * Plain strings become a string array; object entries become RuleContextTarget[].
+   */
+  private normalizeCdnValues(
+    values: Array<string | { identifier: string; type?: string | null }>
+  ): string[] | RuleContextTarget[] | undefined {
+    if (values.length === 0) {
+      return undefined;
+    }
+
+    if (typeof values[0] === 'string') {
+      return values as string[];
+    }
+
+    return (values as Array<{ identifier: string; type?: string | null }>).map((v) => ({
+      identifier: v.identifier,
+      type: v.type ?? null,
+    }));
   }
 
   private evaluateContextClause(clause: RuleCondition, context: Context): boolean {

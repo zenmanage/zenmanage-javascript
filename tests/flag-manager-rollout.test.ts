@@ -601,4 +601,142 @@ describe('FlagManager with rollouts', () => {
       expect(apiClient.reportUsage).toHaveBeenCalledWith('default-context', undefined);
     });
   });
+
+  describe('variant evaluation (first-match-wins)', () => {
+    it('should return value from first matching rule for a string variant flag', async () => {
+      const flagData = buildFlag({
+        key: 'variant-flag',
+        type: 'string',
+        target: {
+          version: 'tar_base',
+          expired_at: null,
+          published_at: '2026-02-20T00:00:00+00:00',
+          scheduled_at: null,
+          value: { version: 'val_base', value: { string: 'control' } },
+        },
+        rules: [
+          {
+            clauses: [{ attribute: 'country', operator: 'equal', value: 'US' }],
+            value: { value: { string: 'treatment-us' } },
+          },
+          {
+            clauses: [{ attribute: 'plan', operator: 'equal', value: 'pro' }],
+            value: { value: { string: 'treatment-pro' } },
+          },
+        ],
+      });
+      const cache = createMockCache([flagData]);
+      const apiClient = createMockApiClient();
+      const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
+
+      // Matches first rule (country=US)
+      const ctx1 = Context.single('user', 'c1');
+      ctx1.addAttribute(new Attribute('country', ['US']));
+      expect((await manager.withContext(ctx1).single('variant-flag')).asString()).toBe(
+        'treatment-us'
+      );
+
+      // Matches second rule only (plan=pro, country=CA)
+      const ctx2 = Context.single('user', 'c2');
+      ctx2.addAttribute(new Attribute('country', ['CA']));
+      ctx2.addAttribute(new Attribute('plan', ['pro']));
+      expect((await manager.withContext(ctx2).single('variant-flag')).asString()).toBe(
+        'treatment-pro'
+      );
+
+      // Matches both rules — first rule wins
+      const ctx3 = Context.single('user', 'c3');
+      ctx3.addAttribute(new Attribute('country', ['US']));
+      ctx3.addAttribute(new Attribute('plan', ['pro']));
+      expect((await manager.withContext(ctx3).single('variant-flag')).asString()).toBe(
+        'treatment-us'
+      );
+
+      // Matches neither rule — base value returned
+      const ctx4 = Context.single('user', 'c4');
+      ctx4.addAttribute(new Attribute('country', ['CA']));
+      ctx4.addAttribute(new Attribute('plan', ['free']));
+      expect((await manager.withContext(ctx4).single('variant-flag')).asString()).toBe('control');
+    });
+  });
+
+  describe('rollout with CDN format gate rules', () => {
+    it('should fire CDN-format rollout gate rule for matching context', async () => {
+      const flagData = buildFlag({
+        key: 'cdn-gated-rollout',
+        rollout: {
+          target: {
+            version: 'tar_rollout',
+            expired_at: null,
+            published_at: '2026-02-24T00:00:00+00:00',
+            scheduled_at: null,
+            value: { version: 'val_rollout', value: { boolean: false } },
+          },
+          rules: [
+            {
+              clauses: [
+                {
+                  selector: 'attribute',
+                  selector_subtype: 'country',
+                  comparer: 'equal',
+                  values: ['US'],
+                } as any,
+              ],
+              value: { value: { boolean: true } },
+            },
+          ],
+          percentage: 100,
+          salt: 'test-salt',
+          status: 'active',
+        },
+      });
+      const cache = createMockCache([flagData]);
+      const apiClient = createMockApiClient();
+      const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
+
+      // user-0 is in bucket at 100%, country=US => CDN gate rule fires => true
+      const usCtx = Context.single('user', 'user-0');
+      usCtx.addAttribute(new Attribute('country', ['US']));
+      expect((await manager.withContext(usCtx).single('cdn-gated-rollout')).asBool()).toBe(true);
+    });
+
+    it('should use rollout target when CDN-format gate rule does not match', async () => {
+      const flagData = buildFlag({
+        key: 'cdn-gated-rollout',
+        rollout: {
+          target: {
+            version: 'tar_rollout',
+            expired_at: null,
+            published_at: '2026-02-24T00:00:00+00:00',
+            scheduled_at: null,
+            value: { version: 'val_rollout', value: { boolean: false } },
+          },
+          rules: [
+            {
+              clauses: [
+                {
+                  selector: 'attribute',
+                  selector_subtype: 'country',
+                  comparer: 'equal',
+                  values: ['US'],
+                } as any,
+              ],
+              value: { value: { boolean: true } },
+            },
+          ],
+          percentage: 100,
+          salt: 'test-salt',
+          status: 'active',
+        },
+      });
+      const cache = createMockCache([flagData]);
+      const apiClient = createMockApiClient();
+      const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
+
+      // user-0 is in bucket at 100%, country=CA => gate rule doesn't fire => rollout target (false)
+      const caCtx = Context.single('user', 'user-0');
+      caCtx.addAttribute(new Attribute('country', ['CA']));
+      expect((await manager.withContext(caCtx).single('cdn-gated-rollout')).asBool()).toBe(false);
+    });
+  });
 });
