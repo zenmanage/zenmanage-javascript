@@ -96,6 +96,7 @@ Please be respectful and constructive in all interactions. We're all here to lea
 ## Questions?
 
 If you have questions, feel free to:
+
 - Open a GitHub Discussion
 - Create an issue
 - Contact us at support@zenmanage.com

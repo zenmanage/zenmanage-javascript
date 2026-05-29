@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+
 - **Browser-safe default entry point**: `@zenmanage/sdk` no longer imports Node.js built-ins (`fs`, `path`, `util`), making it fully compatible with browser bundlers (Webpack, Vite, Rollup, esbuild, etc.) and CDNs.
 - **New Node.js entry point**: `@zenmanage/sdk/node` re-exports everything from the main entry plus `FileSystemCache`. Use this when you need filesystem caching on a Node.js server.
 - **New `.withCache()` config method**: `ConfigBuilder.withCache(cache)` accepts any `Cache` implementation, making it easy to provide `FileSystemCache` (from the node entry) or a completely custom cache (e.g., Redis, IndexedDB).
@@ -17,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2024-02-09
 
 ### Added
+
 - Initial release of the Zenmanage JavaScript SDK
 - Full TypeScript support with type definitions
 - Support for both Node.js (16+) and modern browsers
@@ -33,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ESM and CommonJS support (dual package)
 
 ### Features
+
 - Boolean, string, and number flag types
 - Type-safe flag value accessors
 - Context attributes for fine-grained targeting
@@ -43,11 +46,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A/B testing capabilities
 
 ### Cache Backends
+
 - **InMemoryCache**: Fast, works everywhere, default choice
 - **FileSystemCache**: Persistent cache for Node.js servers
 - **NullCache**: No caching for testing and debugging
 
 ### Supported Operators
+
 - equals, not_equals
 - contains, not_contains
 - in, not_in
@@ -55,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - gt, gte, lt, lte (numeric comparisons)
 
 ### Documentation
+
 - Comprehensive README with usage examples
 - API reference documentation
 - 5 detailed example files
@@ -62,6 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Best practices guide
 
 ### Testing
+
 - Unit tests for all core functionality
 - Test coverage for cache implementations
 - Context and attribute testing

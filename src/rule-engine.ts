@@ -147,8 +147,7 @@ export class RuleEngine {
       return clause;
     }
 
-    const attribute =
-      raw.selector === 'attribute' ? (raw.selector_subtype ?? '') : raw.selector;
+    const attribute = raw.selector === 'attribute' ? (raw.selector_subtype ?? '') : raw.selector;
 
     // Normalise operator: lowercase, strip hyphens/spaces/underscores so that
     // "not_equal" → "notequal", "starts_with" → "startswith", etc.

@@ -11,17 +11,17 @@ Add feature flags to your JavaScript/TypeScript application in minutes. Control 
 
 The SDK ships two entry points:
 
-| Import | Environment | Includes |
-|---|---|---|
-| `@zenmanage/sdk` | **Browser + Node.js** | Core SDK, `InMemoryCache`, `NullCache` |
-| `@zenmanage/sdk/node` | **Node.js only** | Everything above + `FileSystemCache` |
+| Import                | Environment           | Includes                               |
+| --------------------- | --------------------- | -------------------------------------- |
+| `@zenmanage/sdk`      | **Browser + Node.js** | Core SDK, `InMemoryCache`, `NullCache` |
+| `@zenmanage/sdk/node` | **Node.js only**      | Everything above + `FileSystemCache`   |
 
 Use `@zenmanage/sdk` for browser apps or universal code. Use `@zenmanage/sdk/node` when you need filesystem caching in a Node.js server.
 
 ## Why Zenmanage?
 
 - 🚀 **Fast**: Rules cached locally - ~1ms evaluation time
-- 🎯 **Targeted**: Roll out features to specific users, organizations, or segments  
+- 🎯 **Targeted**: Roll out features to specific users, organizations, or segments
 - 🛡️ **Safe**: Graceful fallbacks and error handling built-in
 - 📊 **Insightful**: Automatic usage tracking (optional)
 - 🧪 **Testable**: Easy to mock in tests
@@ -53,9 +53,7 @@ npm install @zenmanage/sdk
 import { Zenmanage, ConfigBuilder } from '@zenmanage/sdk';
 
 const zenmanage = new Zenmanage(
-  ConfigBuilder.create()
-    .withEnvironmentToken('cli_your_client_key_here')
-    .build()
+  ConfigBuilder.create().withEnvironmentToken('cli_your_client_key_here').build()
 );
 ```
 
@@ -83,17 +81,13 @@ That's it! 🎉
 import { Zenmanage, ConfigBuilder, Context } from '@zenmanage/sdk';
 
 const zenmanage = new Zenmanage(
-  ConfigBuilder.create()
-    .withEnvironmentToken('cli_your_client_key_here')
-    .build()
+  ConfigBuilder.create().withEnvironmentToken('cli_your_client_key_here').build()
 );
 
 // Create context with user information
 const context = Context.single('user', userId, userName);
 
-const betaAccess = await zenmanage.flags()
-  .withContext(context)
-  .single('beta-program');
+const betaAccess = await zenmanage.flags().withContext(context).single('beta-program');
 
 if (betaAccess.isEnabled()) {
   // User is in beta program
@@ -108,19 +102,12 @@ if (betaAccess.isEnabled()) {
 ```typescript
 import { Context, Attribute } from '@zenmanage/sdk';
 
-const context = new Context(
-  'user',
-  user.name,
-  user.id,
-  [
-    new Attribute('country', [user.country]),
-    new Attribute('plan', [user.subscriptionPlan]),
-  ]
-);
+const context = new Context('user', user.name, user.id, [
+  new Attribute('country', [user.country]),
+  new Attribute('plan', [user.subscriptionPlan]),
+]);
 
-const variant = await zenmanage.flags()
-  .withContext(context)
-  .single('checkout-flow');
+const variant = await zenmanage.flags().withContext(context).single('checkout-flow');
 
 if (variant.asString() === 'one-page') {
   renderOnePageCheckout();
@@ -139,9 +126,7 @@ import { Context } from '@zenmanage/sdk';
 // Just provide a context with an identifier — the SDK does the rest
 const context = Context.single('user', userId);
 
-const flag = await zenmanage.flags()
-  .withContext(context)
-  .single('new-checkout-flow');
+const flag = await zenmanage.flags().withContext(context).single('new-checkout-flow');
 
 if (flag.isEnabled()) {
   // This user is in the rollout percentage
@@ -153,6 +138,7 @@ if (flag.isEnabled()) {
 ```
 
 **How it works:**
+
 - Configure the rollout percentage (0–100%) and a unique salt in the Zenmanage dashboard
 - The SDK hashes `salt:contextIdentifier` to deterministically assign each user to a bucket (0–99)
 - Users whose bucket is below the percentage get the rollout value; others get the fallback
@@ -166,7 +152,8 @@ if (flag.isEnabled()) {
 ```typescript
 const orgContext = Context.single('organization', orgId, orgName);
 
-const enterpriseFeatures = await zenmanage.flags()
+const enterpriseFeatures = await zenmanage
+  .flags()
   .withContext(orgContext)
   .single('enterprise-analytics');
 
@@ -179,8 +166,7 @@ if (enterpriseFeatures.isEnabled()) {
 
 ```typescript
 // Inline default (highest priority)
-const flag = await zenmanage.flags()
-  .single('feature-flag', true);
+const flag = await zenmanage.flags().single('feature-flag', true);
 
 console.log(flag.isEnabled()); // Returns true if flag not found
 
@@ -213,12 +199,12 @@ for (const flag of allFlags) {
 const config = ConfigBuilder.create()
   .withEnvironmentToken('cli_your_client_key_here') // Browser/client runtime
   // For Node.js/server runtime use: .withEnvironmentToken('srv_your_server_key_here')
-  .withCacheTtl(3600)                            // Cache TTL in seconds (default: 3600)
-  .withCacheBackend('memory')                    // 'memory' or 'null' (default: 'memory')
-  .withCache(customCacheInstance)                 // Custom Cache implementation (overrides cacheBackend)
-  .withUsageReporting(true)                      // Enable usage tracking (default: true)
-  .withApiEndpoint('https://api.zenmanage.com')  // Custom API endpoint (default: api.zenmanage.com)
-  .withLogger(customLogger)                      // Custom logger instance
+  .withCacheTtl(3600) // Cache TTL in seconds (default: 3600)
+  .withCacheBackend('memory') // 'memory' or 'null' (default: 'memory')
+  .withCache(customCacheInstance) // Custom Cache implementation (overrides cacheBackend)
+  .withUsageReporting(true) // Enable usage tracking (default: true)
+  .withApiEndpoint('https://api.zenmanage.com') // Custom API endpoint (default: api.zenmanage.com)
+  .withLogger(customLogger) // Custom logger instance
   .build();
 
 const zenmanage = new Zenmanage(config);
@@ -242,6 +228,7 @@ const zenmanage = new Zenmanage(config);
 ## Cache Backends
 
 ### Memory Cache (Default)
+
 Best for: Most applications, serverless functions, browsers
 
 ```typescript
@@ -254,6 +241,7 @@ ConfigBuilder.create()
 Data is cached in memory for the lifetime of the application. Fastest option but data is lost on restart. Works everywhere (Node.js and browsers).
 
 ### Filesystem Cache (Node.js only)
+
 Best for: Long-running Node.js servers
 
 The filesystem cache is available from the `@zenmanage/sdk/node` entry point:
@@ -278,11 +266,21 @@ You can provide any object that implements the `Cache` interface via `.withCache
 import type { Cache } from '@zenmanage/sdk';
 
 class RedisCache implements Cache {
-  async get(key: string): Promise<string | null> { /* ... */ }
-  async set(key: string, value: string, ttl?: number): Promise<void> { /* ... */ }
-  async has(key: string): Promise<boolean> { /* ... */ }
-  async delete(key: string): Promise<void> { /* ... */ }
-  async clear(): Promise<void> { /* ... */ }
+  async get(key: string): Promise<string | null> {
+    /* ... */
+  }
+  async set(key: string, value: string, ttl?: number): Promise<void> {
+    /* ... */
+  }
+  async has(key: string): Promise<boolean> {
+    /* ... */
+  }
+  async delete(key: string): Promise<void> {
+    /* ... */
+  }
+  async clear(): Promise<void> {
+    /* ... */
+  }
 }
 
 const config = ConfigBuilder.create()
@@ -292,6 +290,7 @@ const config = ConfigBuilder.create()
 ```
 
 ### Null Cache (No Caching)
+
 Best for: Testing, debugging
 
 ```typescript
@@ -325,9 +324,9 @@ const context = Context.single('user', 'user-123', 'John Doe');
 import { Context, Attribute } from '@zenmanage/sdk';
 
 const context = new Context(
-  'user',           // type
-  'John Doe',       // name (optional)
-  'user-123',       // identifier (optional)
+  'user', // type
+  'John Doe', // name (optional)
+  'user-123', // identifier (optional)
   [
     new Attribute('country', ['US']),
     new Attribute('plan', ['premium', 'annual']),
@@ -335,9 +334,7 @@ const context = new Context(
   ]
 );
 
-const flag = await zenmanage.flags()
-  .withContext(context)
-  .single('premium-feature');
+const flag = await zenmanage.flags().withContext(context).single('premium-feature');
 ```
 
 ### Context Types
@@ -413,6 +410,7 @@ console.log(maxItems); // 100, 250, etc.
 ### Type-Safe Access
 
 All flags have multiple accessor methods:
+
 - `isEnabled()`: Boolean check (only true for boolean flags with value `true`)
 - `asBool()`: Get value as boolean
 - `asString()`: Get value as string
@@ -484,25 +482,23 @@ The default `@zenmanage/sdk` entry point is fully browser-safe — it contains n
 ```html
 <!DOCTYPE html>
 <html>
-<head>
-  <script type="module">
-    import { Zenmanage, ConfigBuilder } from 'https://cdn.skypack.dev/@zenmanage/sdk';
+  <head>
+    <script type="module">
+      import { Zenmanage, ConfigBuilder } from 'https://cdn.skypack.dev/@zenmanage/sdk';
 
-    const zenmanage = new Zenmanage(
-      ConfigBuilder.create()
-        .withEnvironmentToken('srv_your_server_key_here')
-        .build()
-    );
+      const zenmanage = new Zenmanage(
+        ConfigBuilder.create().withEnvironmentToken('srv_your_server_key_here').build()
+      );
 
-    const flag = await zenmanage.flags().single('new-ui');
-    if (flag.isEnabled()) {
-      document.body.classList.add('new-ui');
-    }
-  </script>
-</head>
-<body>
-  <!-- Your content -->
-</body>
+      const flag = await zenmanage.flags().single('new-ui');
+      if (flag.isEnabled()) {
+        document.body.classList.add('new-ui');
+      }
+    </script>
+  </head>
+  <body>
+    <!-- Your content -->
+  </body>
 </html>
 ```
 
@@ -512,9 +508,7 @@ With a bundler (Webpack, Vite, etc.):
 import { Zenmanage, ConfigBuilder } from '@zenmanage/sdk';
 
 const zenmanage = new Zenmanage(
-  ConfigBuilder.create()
-    .withEnvironmentToken('srv_your_server_key_here')
-    .build()
+  ConfigBuilder.create().withEnvironmentToken('srv_your_server_key_here').build()
 );
 ```
 
@@ -568,9 +562,7 @@ vi.mock('@zenmanage/sdk', async () => {
 });
 
 test('feature flag enabled', async () => {
-  const zenmanage = new Zenmanage(
-    ConfigBuilder.create().withEnvironmentToken('srv_test').build()
-  );
+  const zenmanage = new Zenmanage(ConfigBuilder.create().withEnvironmentToken('srv_test').build());
 
   const flag = await zenmanage.flags().single('test-flag');
   expect(flag.isEnabled()).toBe(true);
@@ -588,18 +580,14 @@ Create a single Zenmanage instance and reuse it throughout your application:
 import { Zenmanage, ConfigBuilder } from '@zenmanage/sdk/node';
 
 export const zenmanage = new Zenmanage(
-  ConfigBuilder.create()
-    .withEnvironmentToken(process.env.ZENMANAGE_TOKEN!)
-    .build()
+  ConfigBuilder.create().withEnvironmentToken(process.env.ZENMANAGE_TOKEN!).build()
 );
 
 // zenmanage.ts (Browser)
 import { Zenmanage, ConfigBuilder } from '@zenmanage/sdk';
 
 export const zenmanage = new Zenmanage(
-  ConfigBuilder.create()
-    .withEnvironmentToken('srv_your_server_key_here')
-    .build()
+  ConfigBuilder.create().withEnvironmentToken('srv_your_server_key_here').build()
 );
 
 // other-file.ts
@@ -652,6 +640,7 @@ try {
 Main SDK class.
 
 **Methods:**
+
 - `flags()`: Returns the FlagManager instance
 
 ### ConfigBuilder
@@ -659,6 +648,7 @@ Main SDK class.
 Fluent builder for creating configuration.
 
 **Methods:**
+
 - `create()`: Create new builder
 - `fromEnvironment()`: Create builder from environment variables (Node.js only)
 - `withEnvironmentToken(token)`: Set environment token (required)
@@ -676,6 +666,7 @@ Fluent builder for creating configuration.
 Manages flag evaluation.
 
 **Methods:**
+
 - `single(key, defaultValue?)`: Get a single flag by key
 - `all()`: Get all flags
 - `withContext(context)`: Create new manager with context
@@ -688,6 +679,7 @@ Manages flag evaluation.
 Represents evaluation context.
 
 **Methods:**
+
 - `single(type, identifier, name?)`: Create simple context
 - `fromObject(data)`: Create from plain object
 - `addAttribute(attribute)`: Add an attribute
@@ -700,6 +692,7 @@ Represents evaluation context.
 Represents a feature flag.
 
 **Methods:**
+
 - `isEnabled()`: Check if boolean flag is enabled
 - `asBool()`: Get value as boolean
 - `asString()`: Get value as string

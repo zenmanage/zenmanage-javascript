@@ -5,16 +5,19 @@ This directory contains examples demonstrating various features and use cases of
 ## Running the Examples
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
 2. Set your environment token:
+
 ```bash
 export ZENMANAGE_ENVIRONMENT_TOKEN="srv_your_server_key_here"
 ```
 
 3. Run an example:
+
 ```bash
 # For TypeScript examples (requires ts-node)
 npm install -g ts-node
@@ -28,21 +31,27 @@ node dist/index.js
 ## Examples
 
 ### simple-flags.ts
+
 Basic flag operations including retrieving boolean, string, and number flags.
 
 ### context-based-flags.ts
+
 Demonstrates using context for user-based, organization-based, and attribute-based flag targeting.
 
 ### ab-testing.ts
+
 A/B testing example showing how to use flags for experiments and variants.
 
 ### defaults.ts
+
 Using default values with inline defaults and DefaultsCollection.
 
 ### caching.ts
+
 Different cache backend configurations and their use cases. Demonstrates the filesystem cache from `@zenmanage/sdk/node` and the browser-safe in-memory cache from `@zenmanage/sdk`.
 
 ### percentage-rollouts.ts
+
 SDK-side percentage rollouts with automatic CRC32B bucketing.
 
 ## Note
