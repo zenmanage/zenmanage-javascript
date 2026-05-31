@@ -121,7 +121,7 @@ export class ApiClient {
     }
 
     try {
-      const url = `${this.baseUrl}/v1/flags/${key}/usage`;
+      const url = `${this.baseUrl}/v1/flags/${encodeURIComponent(key)}/usage`;
       const headers = { ...this.headers };
 
       // Send context as header only when it carries identifying targeting data
@@ -180,6 +180,10 @@ export class ApiClient {
 
     if (typeof cdn !== 'string' || typeof path !== 'string') {
       throw new InvalidRulesError('cdn or path fields are not strings');
+    }
+
+    if (!cdn.startsWith('https://')) {
+      throw new InvalidRulesError('CDN URL must use HTTPS');
     }
 
     return cdn + path;
