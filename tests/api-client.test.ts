@@ -31,11 +31,13 @@ describe('ApiClient security', () => {
       // Use mockImplementation so each call gets a fresh Response (body can only be read once).
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockImplementation(() =>
-          Promise.resolve(
-            makeJsonResponse({ data: { cdn: 'http://internal-host', path: '/rules.json' } })
+        vi
+          .fn()
+          .mockImplementation(() =>
+            Promise.resolve(
+              makeJsonResponse({ data: { cdn: 'http://internal-host', path: '/rules.json' } })
+            )
           )
-        )
       );
 
       const client = new ApiClient('srv_test', 'https://api.example.com', createMockLogger());
@@ -58,12 +60,7 @@ describe('ApiClient security', () => {
       );
 
       // enableUsageReporting must be true (4th arg)
-      const client = new ApiClient(
-        'srv_test',
-        'https://api.example.com',
-        createMockLogger(),
-        true
-      );
+      const client = new ApiClient('srv_test', 'https://api.example.com', createMockLogger(), true);
       await client.reportUsage('flag/with/slashes');
 
       expect(capturedUrls.length).toBeGreaterThan(0);
