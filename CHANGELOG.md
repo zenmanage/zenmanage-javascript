@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-07-30
+
 ### Changed
 
 - Usage reports now include the default value the SDK fell back to (inline default or `DefaultsCollection` entry), sent via the `X-DEFAULT-VALUE` header, so it can be persisted and shown on the flag detail page.
