@@ -186,7 +186,7 @@ describe('FlagManager with rollouts', () => {
 
       // Even at 100%, null identifier => fallback
       expect(flag.asBool()).toBe(false);
-      expect(apiClient.reportUsage).toHaveBeenCalledWith('rollout-flag', undefined);
+      expect(apiClient.reportUsage).toHaveBeenCalledWith('rollout-flag', undefined, undefined);
     });
 
     it('should serve rollout value to all contexts at 100%', async () => {
@@ -598,7 +598,7 @@ describe('FlagManager with rollouts', () => {
       const flag = await manager.single('default-context');
       // Even at 100%, null identifier => fallback
       expect(flag.asBool()).toBe(false);
-      expect(apiClient.reportUsage).toHaveBeenCalledWith('default-context', undefined);
+      expect(apiClient.reportUsage).toHaveBeenCalledWith('default-context', undefined, undefined);
     });
   });
 

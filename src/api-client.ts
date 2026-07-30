@@ -1,4 +1,4 @@
-import type { Logger, RulesResponse } from './types';
+import type { FlagValue, Logger, RulesResponse } from './types';
 import type { Context } from './context';
 import { FetchRulesError, InvalidRulesError } from './errors';
 
@@ -109,10 +109,11 @@ export class ApiClient {
   /**
    * Report flag usage to the API
    */
-  async reportUsage(key: string, context?: Context): Promise<void> {
+  async reportUsage(key: string, context?: Context, defaultValue?: FlagValue): Promise<void> {
     this.logger.debug(`reportUsage called for flag: ${key}`, {
       enableUsageReporting: this.enableUsageReporting,
       hasContext: !!context,
+      hasDefaultValue: defaultValue !== undefined,
     });
 
     if (!this.enableUsageReporting) {
@@ -127,6 +128,12 @@ export class ApiClient {
       // Send context as header only when it carries identifying targeting data
       if (context && this.shouldSendContext(context)) {
         headers['X-ZENMANAGE-CONTEXT'] = JSON.stringify(context.toJSON());
+      }
+
+      // Send the default value the client fell back to, keyed by flag key
+      // (the API accepts a comma-delimited flag list, so the header is a map)
+      if (defaultValue !== undefined) {
+        headers['X-DEFAULT-VALUE'] = JSON.stringify({ [key]: defaultValue });
       }
 
       this.logger.debug(`Sending reportUsage request to ${url}`, { method: 'POST' });
