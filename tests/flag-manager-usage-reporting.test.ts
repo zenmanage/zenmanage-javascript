@@ -66,7 +66,11 @@ describe('FlagManager default value usage reporting', () => {
     const flag = await manager.single('collection-flag');
 
     expect(flag.asString()).toBe('fallback-value');
-    expect(apiClient.reportUsage).toHaveBeenCalledWith('collection-flag', undefined, 'fallback-value');
+    expect(apiClient.reportUsage).toHaveBeenCalledWith(
+      'collection-flag',
+      undefined,
+      'fallback-value'
+    );
   });
 
   it('prioritizes the inline default over a DefaultsCollection entry when reporting usage', async () => {
@@ -112,7 +116,9 @@ describe('FlagManager default value usage reporting', () => {
       createMockLogger()
     );
 
-    await expect(manager.single('nonexistent-flag')).rejects.toThrow('Flag not found: nonexistent-flag');
+    await expect(manager.single('nonexistent-flag')).rejects.toThrow(
+      'Flag not found: nonexistent-flag'
+    );
     expect(apiClient.reportUsage).not.toHaveBeenCalled();
   });
 });

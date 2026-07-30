@@ -71,7 +71,10 @@ describe('ApiClient security', () => {
 });
 
 describe('ApiClient.reportUsage default value header', () => {
-  function captureHeaders(): { capturedHeaders: HeadersInit[]; fetchMock: ReturnType<typeof vi.fn> } {
+  function captureHeaders(): {
+    capturedHeaders: HeadersInit[];
+    fetchMock: ReturnType<typeof vi.fn>;
+  } {
     const capturedHeaders: HeadersInit[] = [];
     const fetchMock = vi.fn().mockImplementation((_url: string, options: RequestInit) => {
       capturedHeaders.push(options.headers as HeadersInit);
