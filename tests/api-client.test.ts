@@ -21,6 +21,25 @@ function makeJsonResponse(body: unknown, status = 200): Response {
   });
 }
 
+/**
+ * Stubs global fetch to serve the metadata + CDN rules pair getRules() expects,
+ * capturing the headers sent on each call for assertions.
+ */
+function stubFetchForGetRules(capturedHeaders: HeadersInit[]): void {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockImplementation((url: string, options: RequestInit) => {
+      capturedHeaders.push(options.headers as HeadersInit);
+      if (url.includes('/v1/flag-json')) {
+        return Promise.resolve(
+          makeJsonResponse({ data: { cdn: 'https://cdn.example.com', path: '/rules.json' } })
+        );
+      }
+      return Promise.resolve(makeJsonResponse({ version: '1', flags: [] }));
+    })
+  );
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
@@ -53,18 +72,7 @@ describe('ApiClient security', () => {
   describe('X-ZEN-API-KEY header', () => {
     it('sends the environment token in the X-ZEN-API-KEY header when fetching rules metadata', async () => {
       const capturedHeaders: HeadersInit[] = [];
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockImplementation((url: string, options: RequestInit) => {
-          capturedHeaders.push(options.headers as HeadersInit);
-          if (url.includes('/v1/flag-json')) {
-            return Promise.resolve(
-              makeJsonResponse({ data: { cdn: 'https://cdn.example.com', path: '/rules.json' } })
-            );
-          }
-          return Promise.resolve(makeJsonResponse({ version: '1', flags: [] }));
-        })
-      );
+      stubFetchForGetRules(capturedHeaders);
 
       const client = new ApiClient('srv_test_token', 'https://api.example.com', createMockLogger());
       await client.getRules();
@@ -77,18 +85,7 @@ describe('ApiClient security', () => {
   describe('X-ZEN-CLIENT-AGENT header', () => {
     it('reports the current package version, not a hardcoded one', async () => {
       const capturedHeaders: HeadersInit[] = [];
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockImplementation((url: string, options: RequestInit) => {
-          capturedHeaders.push(options.headers as HeadersInit);
-          if (url.includes('/v1/flag-json')) {
-            return Promise.resolve(
-              makeJsonResponse({ data: { cdn: 'https://cdn.example.com', path: '/rules.json' } })
-            );
-          }
-          return Promise.resolve(makeJsonResponse({ version: '1', flags: [] }));
-        })
-      );
+      stubFetchForGetRules(capturedHeaders);
 
       const client = new ApiClient('srv_test_token', 'https://api.example.com', createMockLogger());
       await client.getRules();
