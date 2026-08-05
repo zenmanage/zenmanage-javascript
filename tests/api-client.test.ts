@@ -3,6 +3,7 @@ import { ApiClient } from '../src/api-client';
 import { Context } from '../src/context';
 import { FetchRulesError } from '../src/errors';
 import type { Logger } from '../src/types';
+import { version as packageVersion } from '../package.json';
 
 function createMockLogger(): Logger {
   return {
@@ -70,6 +71,30 @@ describe('ApiClient security', () => {
 
       const metadataHeaders = capturedHeaders[0] as Record<string, string>;
       expect(metadataHeaders['X-ZEN-API-KEY']).toBe('srv_test_token');
+    });
+  });
+
+  describe('X-ZEN-CLIENT-AGENT header', () => {
+    it('reports the current package version, not a hardcoded one', async () => {
+      const capturedHeaders: HeadersInit[] = [];
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation((url: string, options: RequestInit) => {
+          capturedHeaders.push(options.headers as HeadersInit);
+          if (url.includes('/v1/flag-json')) {
+            return Promise.resolve(
+              makeJsonResponse({ data: { cdn: 'https://cdn.example.com', path: '/rules.json' } })
+            );
+          }
+          return Promise.resolve(makeJsonResponse({ version: '1', flags: [] }));
+        })
+      );
+
+      const client = new ApiClient('srv_test_token', 'https://api.example.com', createMockLogger());
+      await client.getRules();
+
+      const metadataHeaders = capturedHeaders[0] as Record<string, string>;
+      expect(metadataHeaders['X-ZEN-CLIENT-AGENT']).toBe(`zenmanage-javascript/${packageVersion}`);
     });
   });
 

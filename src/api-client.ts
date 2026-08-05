@@ -1,6 +1,7 @@
 import type { FlagValue, Logger, RulesResponse } from './types';
 import type { Context } from './context';
 import { FetchRulesError, InvalidRulesError } from './errors';
+import { version as SDK_VERSION } from '../package.json';
 
 /**
  * Metadata response from the API containing CDN information
@@ -12,7 +13,6 @@ interface FlagMetadataResponse {
   };
 }
 
-const SDK_VERSION = '3.0.0';
 const CLIENT_AGENT = 'zenmanage-javascript';
 const DEFAULT_API_ENDPOINT = 'https://api.zenmanage.com';
 const RULES_PATH = '/v1/flag-json';
