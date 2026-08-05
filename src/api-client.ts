@@ -36,7 +36,7 @@ export class ApiClient {
     this.headers = {
       Accept: 'application/json',
       'Content-Type': 'application/json',
-      'X-ZEN-API-Key': environmentToken,
+      'X-ZEN-API-KEY': environmentToken,
       'X-ZEN-CLIENT-AGENT': `${CLIENT_AGENT}/${SDK_VERSION}`,
     };
   }
