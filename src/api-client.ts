@@ -36,7 +36,7 @@ export class ApiClient {
     this.headers = {
       Accept: 'application/json',
       'Content-Type': 'application/json',
-      'X-API-Key': environmentToken,
+      'X-ZEN-API-Key': environmentToken,
       'X-ZEN-CLIENT-AGENT': `${CLIENT_AGENT}/${SDK_VERSION}`,
     };
   }
@@ -127,13 +127,13 @@ export class ApiClient {
 
       // Send context as header only when it carries identifying targeting data
       if (context && this.shouldSendContext(context)) {
-        headers['X-ZENMANAGE-CONTEXT'] = JSON.stringify(context.toJSON());
+        headers['X-ZEN-CONTEXT'] = JSON.stringify(context.toJSON());
       }
 
       // Send the default value the client fell back to, keyed by flag key
       // (the API accepts a comma-delimited flag list, so the header is a map)
       if (defaultValue !== undefined) {
-        headers['X-DEFAULT-VALUE'] = JSON.stringify({ [key]: defaultValue });
+        headers['X-ZEN-DEFAULT-VALUE'] = JSON.stringify({ [key]: defaultValue });
       }
 
       this.logger.debug(`Sending reportUsage request to ${url}`, { method: 'POST' });

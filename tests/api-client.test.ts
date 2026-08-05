@@ -84,7 +84,7 @@ describe('ApiClient.reportUsage default value header', () => {
     return { capturedHeaders, fetchMock };
   }
 
-  it('sends the default value keyed by flag key in the X-DEFAULT-VALUE header', async () => {
+  it('sends the default value keyed by flag key in the X-ZEN-DEFAULT-VALUE header', async () => {
     const { capturedHeaders } = captureHeaders();
     const client = new ApiClient('srv_test', 'https://api.example.com', createMockLogger(), true);
 
@@ -92,7 +92,7 @@ describe('ApiClient.reportUsage default value header', () => {
 
     expect(capturedHeaders).toHaveLength(1);
     const headers = capturedHeaders[0] as Record<string, string>;
-    expect(headers['X-DEFAULT-VALUE']).toBe(JSON.stringify({ 'my-flag': true }));
+    expect(headers['X-ZEN-DEFAULT-VALUE']).toBe(JSON.stringify({ 'my-flag': true }));
   });
 
   it('supports string and number default values', async () => {
@@ -102,10 +102,10 @@ describe('ApiClient.reportUsage default value header', () => {
     await client.reportUsage('str-flag', undefined, 'fallback');
     await client.reportUsage('num-flag', undefined, 42);
 
-    expect((capturedHeaders[0] as Record<string, string>)['X-DEFAULT-VALUE']).toBe(
+    expect((capturedHeaders[0] as Record<string, string>)['X-ZEN-DEFAULT-VALUE']).toBe(
       JSON.stringify({ 'str-flag': 'fallback' })
     );
-    expect((capturedHeaders[1] as Record<string, string>)['X-DEFAULT-VALUE']).toBe(
+    expect((capturedHeaders[1] as Record<string, string>)['X-ZEN-DEFAULT-VALUE']).toBe(
       JSON.stringify({ 'num-flag': 42 })
     );
   });
@@ -117,7 +117,7 @@ describe('ApiClient.reportUsage default value header', () => {
     await client.reportUsage('no-default-flag');
 
     expect(capturedHeaders).toHaveLength(1);
-    expect('X-DEFAULT-VALUE' in (capturedHeaders[0] as Record<string, string>)).toBe(false);
+    expect('X-ZEN-DEFAULT-VALUE' in (capturedHeaders[0] as Record<string, string>)).toBe(false);
   });
 
   it('omits the header when reporting usage for a found flag with no default (falsy but defined values still send)', async () => {
@@ -128,10 +128,10 @@ describe('ApiClient.reportUsage default value header', () => {
     await client.reportUsage('bool-false-flag', undefined, false);
     await client.reportUsage('zero-flag', undefined, 0);
 
-    expect((capturedHeaders[0] as Record<string, string>)['X-DEFAULT-VALUE']).toBe(
+    expect((capturedHeaders[0] as Record<string, string>)['X-ZEN-DEFAULT-VALUE']).toBe(
       JSON.stringify({ 'bool-false-flag': false })
     );
-    expect((capturedHeaders[1] as Record<string, string>)['X-DEFAULT-VALUE']).toBe(
+    expect((capturedHeaders[1] as Record<string, string>)['X-ZEN-DEFAULT-VALUE']).toBe(
       JSON.stringify({ 'zero-flag': 0 })
     );
   });
