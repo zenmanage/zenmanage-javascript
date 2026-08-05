@@ -47,9 +47,14 @@ export class FlagManager {
 
     for (const flag of this.flags || []) {
       if (flag.getKey() === key) {
-        // Report usage for this flag, including the caller-supplied default
-        // (if any) so it's recorded even when the flag was found and evaluated normally
-        await this.reportUsage(key, this.getUsageContext(), defaultValue);
+        // Report usage for this flag, including the effective default (inline
+        // parameter, falling back to a DefaultsCollection entry) so it's recorded
+        // even when the flag was found and evaluated normally
+        await this.reportUsage(
+          key,
+          this.getUsageContext(),
+          this.resolveEffectiveDefault(key, defaultValue)
+        );
 
         return this.evaluateFlag(flag);
       }
@@ -104,6 +109,18 @@ export class FlagManager {
    */
   async reportUsage(key: string, context?: Context, defaultValue?: FlagValue): Promise<void> {
     await this.apiClient.reportUsage(key, context, defaultValue);
+  }
+
+  /**
+   * Resolve the default value that would be used if this flag fell back,
+   * prioritizing the inline parameter over a DefaultsCollection entry.
+   */
+  private resolveEffectiveDefault(key: string, defaultValue?: FlagValue): FlagValue | undefined {
+    if (defaultValue !== undefined) {
+      return defaultValue;
+    }
+
+    return this.defaults.has(key) ? this.defaults.get(key) : undefined;
   }
 
   private getUsageContext(): Context | undefined {
