@@ -47,8 +47,9 @@ export class FlagManager {
 
     for (const flag of this.flags || []) {
       if (flag.getKey() === key) {
-        // Report usage for this flag
-        await this.reportUsage(key, this.getUsageContext());
+        // Report usage for this flag, including the caller-supplied default
+        // (if any) so it's recorded even when the flag was found and evaluated normally
+        await this.reportUsage(key, this.getUsageContext(), defaultValue);
 
         return this.evaluateFlag(flag);
       }

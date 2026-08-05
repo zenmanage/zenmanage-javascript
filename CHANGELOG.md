@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `FlagManager.single()` now sends the caller-supplied default value on usage reports even when the flag is found, not only when it falls back to a default. Previously the `X-ZEN-DEFAULT-VALUE` header was only sent for flags that didn't resolve at all.
+
 ### Changed
 
 - Renamed request headers to use a consistent `X-ZEN-` prefix: `X-API-Key` → `X-ZEN-API-KEY`, `X-ZENMANAGE-CONTEXT` → `X-ZEN-CONTEXT`, and `X-DEFAULT-VALUE` → `X-ZEN-DEFAULT-VALUE`.
