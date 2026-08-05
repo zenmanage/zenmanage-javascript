@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-07-30
+
 ### Changed
 
+- Usage reports now include the default value the SDK fell back to (inline default or `DefaultsCollection` entry), sent via the `X-DEFAULT-VALUE` header, so it can be persisted and shown on the flag detail page.
 - **Browser-safe default entry point**: `@zenmanage/sdk` no longer imports Node.js built-ins (`fs`, `path`, `util`), making it fully compatible with browser bundlers (Webpack, Vite, Rollup, esbuild, etc.) and CDNs.
 - **New Node.js entry point**: `@zenmanage/sdk/node` re-exports everything from the main entry plus `FileSystemCache`. Use this when you need filesystem caching on a Node.js server.
 - **New `.withCache()` config method**: `ConfigBuilder.withCache(cache)` accepts any `Cache` implementation, making it easy to provide `FileSystemCache` (from the node entry) or a completely custom cache (e.g., Redis, IndexedDB).

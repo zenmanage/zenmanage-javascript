@@ -69,3 +69,70 @@ describe('ApiClient security', () => {
     });
   });
 });
+
+describe('ApiClient.reportUsage default value header', () => {
+  function captureHeaders(): {
+    capturedHeaders: HeadersInit[];
+    fetchMock: ReturnType<typeof vi.fn>;
+  } {
+    const capturedHeaders: HeadersInit[] = [];
+    const fetchMock = vi.fn().mockImplementation((_url: string, options: RequestInit) => {
+      capturedHeaders.push(options.headers as HeadersInit);
+      return Promise.resolve(new Response(null, { status: 200 }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    return { capturedHeaders, fetchMock };
+  }
+
+  it('sends the default value keyed by flag key in the X-DEFAULT-VALUE header', async () => {
+    const { capturedHeaders } = captureHeaders();
+    const client = new ApiClient('srv_test', 'https://api.example.com', createMockLogger(), true);
+
+    await client.reportUsage('my-flag', undefined, true);
+
+    expect(capturedHeaders).toHaveLength(1);
+    const headers = capturedHeaders[0] as Record<string, string>;
+    expect(headers['X-DEFAULT-VALUE']).toBe(JSON.stringify({ 'my-flag': true }));
+  });
+
+  it('supports string and number default values', async () => {
+    const { capturedHeaders } = captureHeaders();
+    const client = new ApiClient('srv_test', 'https://api.example.com', createMockLogger(), true);
+
+    await client.reportUsage('str-flag', undefined, 'fallback');
+    await client.reportUsage('num-flag', undefined, 42);
+
+    expect((capturedHeaders[0] as Record<string, string>)['X-DEFAULT-VALUE']).toBe(
+      JSON.stringify({ 'str-flag': 'fallback' })
+    );
+    expect((capturedHeaders[1] as Record<string, string>)['X-DEFAULT-VALUE']).toBe(
+      JSON.stringify({ 'num-flag': 42 })
+    );
+  });
+
+  it('omits the header entirely when no default value is provided', async () => {
+    const { capturedHeaders } = captureHeaders();
+    const client = new ApiClient('srv_test', 'https://api.example.com', createMockLogger(), true);
+
+    await client.reportUsage('no-default-flag');
+
+    expect(capturedHeaders).toHaveLength(1);
+    expect('X-DEFAULT-VALUE' in (capturedHeaders[0] as Record<string, string>)).toBe(false);
+  });
+
+  it('omits the header when reporting usage for a found flag with no default (falsy but defined values still send)', async () => {
+    const { capturedHeaders } = captureHeaders();
+    const client = new ApiClient('srv_test', 'https://api.example.com', createMockLogger(), true);
+
+    // false/0/'' are valid default values and must still be sent
+    await client.reportUsage('bool-false-flag', undefined, false);
+    await client.reportUsage('zero-flag', undefined, 0);
+
+    expect((capturedHeaders[0] as Record<string, string>)['X-DEFAULT-VALUE']).toBe(
+      JSON.stringify({ 'bool-false-flag': false })
+    );
+    expect((capturedHeaders[1] as Record<string, string>)['X-DEFAULT-VALUE']).toBe(
+      JSON.stringify({ 'zero-flag': 0 })
+    );
+  });
+});

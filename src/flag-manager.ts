@@ -58,7 +58,7 @@ export class FlagManager {
     if (defaultValue !== undefined) {
       const flagFromDefault = this.createFlagFromDefault(key, defaultValue);
       // Report usage even for default values
-      await this.reportUsage(key, this.getUsageContext());
+      await this.reportUsage(key, this.getUsageContext(), defaultValue);
 
       return flagFromDefault;
     }
@@ -69,7 +69,7 @@ export class FlagManager {
       if (defaultVal !== undefined) {
         const flagFromDefault = this.createFlagFromDefault(key, defaultVal);
         // Report usage even for default values
-        await this.reportUsage(key, this.getUsageContext());
+        await this.reportUsage(key, this.getUsageContext(), defaultVal);
 
         return flagFromDefault;
       }
@@ -101,8 +101,8 @@ export class FlagManager {
   /**
    * Report flag usage to the API
    */
-  async reportUsage(key: string, context?: Context): Promise<void> {
-    await this.apiClient.reportUsage(key, context);
+  async reportUsage(key: string, context?: Context, defaultValue?: FlagValue): Promise<void> {
+    await this.apiClient.reportUsage(key, context, defaultValue);
   }
 
   private getUsageContext(): Context | undefined {
