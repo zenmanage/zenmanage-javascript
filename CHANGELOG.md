@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.1] - 2026-08-05
+
 ### Fixed
 
 - `FlagManager.single()` now sends the caller-supplied default value on usage reports even when the flag is found, not only when it falls back to a default. Previously the `X-ZEN-DEFAULT-VALUE` header was only sent for flags that didn't resolve at all.
+- The `X-ZEN-CLIENT-AGENT` header now reports the SDK's actual `package.json` version instead of a hardcoded constant that had drifted out of date (stuck at `3.0.0` since the 3.1.x/3.2.0 releases).
 
 ### Changed
 
