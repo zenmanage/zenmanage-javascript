@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { ApiClient } from '../src/api-client';
+import { Context } from '../src/context';
 import { FetchRulesError } from '../src/errors';
 import type { Logger } from '../src/types';
 
@@ -48,6 +49,30 @@ describe('ApiClient security', () => {
     });
   });
 
+  describe('X-ZEN-API-KEY header', () => {
+    it('sends the environment token in the X-ZEN-API-KEY header when fetching rules metadata', async () => {
+      const capturedHeaders: HeadersInit[] = [];
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation((url: string, options: RequestInit) => {
+          capturedHeaders.push(options.headers as HeadersInit);
+          if (url.includes('/v1/flag-json')) {
+            return Promise.resolve(
+              makeJsonResponse({ data: { cdn: 'https://cdn.example.com', path: '/rules.json' } })
+            );
+          }
+          return Promise.resolve(makeJsonResponse({ version: '1', flags: [] }));
+        })
+      );
+
+      const client = new ApiClient('srv_test_token', 'https://api.example.com', createMockLogger());
+      await client.getRules();
+
+      const metadataHeaders = capturedHeaders[0] as Record<string, string>;
+      expect(metadataHeaders['X-ZEN-API-KEY']).toBe('srv_test_token');
+    });
+  });
+
   describe('URL injection: flag key encoding', () => {
     it('percent-encodes flag keys containing path-special characters', async () => {
       const capturedUrls: string[] = [];
@@ -84,7 +109,7 @@ describe('ApiClient.reportUsage default value header', () => {
     return { capturedHeaders, fetchMock };
   }
 
-  it('sends the default value keyed by flag key in the X-DEFAULT-VALUE header', async () => {
+  it('sends the default value keyed by flag key in the X-ZEN-DEFAULT-VALUE header', async () => {
     const { capturedHeaders } = captureHeaders();
     const client = new ApiClient('srv_test', 'https://api.example.com', createMockLogger(), true);
 
@@ -92,7 +117,7 @@ describe('ApiClient.reportUsage default value header', () => {
 
     expect(capturedHeaders).toHaveLength(1);
     const headers = capturedHeaders[0] as Record<string, string>;
-    expect(headers['X-DEFAULT-VALUE']).toBe(JSON.stringify({ 'my-flag': true }));
+    expect(headers['X-ZEN-DEFAULT-VALUE']).toBe(JSON.stringify({ 'my-flag': true }));
   });
 
   it('supports string and number default values', async () => {
@@ -102,10 +127,10 @@ describe('ApiClient.reportUsage default value header', () => {
     await client.reportUsage('str-flag', undefined, 'fallback');
     await client.reportUsage('num-flag', undefined, 42);
 
-    expect((capturedHeaders[0] as Record<string, string>)['X-DEFAULT-VALUE']).toBe(
+    expect((capturedHeaders[0] as Record<string, string>)['X-ZEN-DEFAULT-VALUE']).toBe(
       JSON.stringify({ 'str-flag': 'fallback' })
     );
-    expect((capturedHeaders[1] as Record<string, string>)['X-DEFAULT-VALUE']).toBe(
+    expect((capturedHeaders[1] as Record<string, string>)['X-ZEN-DEFAULT-VALUE']).toBe(
       JSON.stringify({ 'num-flag': 42 })
     );
   });
@@ -117,7 +142,7 @@ describe('ApiClient.reportUsage default value header', () => {
     await client.reportUsage('no-default-flag');
 
     expect(capturedHeaders).toHaveLength(1);
-    expect('X-DEFAULT-VALUE' in (capturedHeaders[0] as Record<string, string>)).toBe(false);
+    expect('X-ZEN-DEFAULT-VALUE' in (capturedHeaders[0] as Record<string, string>)).toBe(false);
   });
 
   it('omits the header when reporting usage for a found flag with no default (falsy but defined values still send)', async () => {
@@ -128,11 +153,49 @@ describe('ApiClient.reportUsage default value header', () => {
     await client.reportUsage('bool-false-flag', undefined, false);
     await client.reportUsage('zero-flag', undefined, 0);
 
-    expect((capturedHeaders[0] as Record<string, string>)['X-DEFAULT-VALUE']).toBe(
+    expect((capturedHeaders[0] as Record<string, string>)['X-ZEN-DEFAULT-VALUE']).toBe(
       JSON.stringify({ 'bool-false-flag': false })
     );
-    expect((capturedHeaders[1] as Record<string, string>)['X-DEFAULT-VALUE']).toBe(
+    expect((capturedHeaders[1] as Record<string, string>)['X-ZEN-DEFAULT-VALUE']).toBe(
       JSON.stringify({ 'zero-flag': 0 })
     );
+  });
+});
+
+describe('ApiClient.reportUsage context header', () => {
+  function captureHeaders(): {
+    capturedHeaders: HeadersInit[];
+    fetchMock: ReturnType<typeof vi.fn>;
+  } {
+    const capturedHeaders: HeadersInit[] = [];
+    const fetchMock = vi.fn().mockImplementation((_url: string, options: RequestInit) => {
+      capturedHeaders.push(options.headers as HeadersInit);
+      return Promise.resolve(new Response(null, { status: 200 }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    return { capturedHeaders, fetchMock };
+  }
+
+  it('sends identifying context data in the X-ZEN-CONTEXT header', async () => {
+    const { capturedHeaders } = captureHeaders();
+    const client = new ApiClient('srv_test', 'https://api.example.com', createMockLogger(), true);
+
+    const context = Context.single('user', 'user-123', 'Test User');
+    await client.reportUsage('my-flag', context);
+
+    expect(capturedHeaders).toHaveLength(1);
+    const headers = capturedHeaders[0] as Record<string, string>;
+    expect(headers['X-ZEN-CONTEXT']).toBe(JSON.stringify(context.toJSON()));
+  });
+
+  it('omits the header for an anonymous context with no identifying data', async () => {
+    const { capturedHeaders } = captureHeaders();
+    const client = new ApiClient('srv_test', 'https://api.example.com', createMockLogger(), true);
+
+    const context = new Context('anonymous');
+    await client.reportUsage('my-flag', context);
+
+    expect(capturedHeaders).toHaveLength(1);
+    expect('X-ZEN-CONTEXT' in (capturedHeaders[0] as Record<string, string>)).toBe(false);
   });
 });

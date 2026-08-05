@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Renamed request headers to use a consistent `X-ZEN-` prefix: `X-API-Key` → `X-ZEN-API-KEY`, `X-ZENMANAGE-CONTEXT` → `X-ZEN-CONTEXT`, and `X-DEFAULT-VALUE` → `X-ZEN-DEFAULT-VALUE`.
+
 ## [3.2.0] - 2026-07-30
 
 ### Changed
