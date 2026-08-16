@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-08-16
+
+### Added
+
+- CI now automatically publishes the package to npm on every merge to `main`, skipping the publish when the `package.json` version hasn't changed.
+
 ## [3.2.1] - 2026-08-05
 
 ### Fixed
