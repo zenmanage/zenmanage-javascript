@@ -2,6 +2,7 @@ import type { FlagValue, Logger, RulesResponse } from './types';
 import type { Context } from './context';
 import { FetchRulesError, InvalidRulesError } from './errors';
 import { version as SDK_VERSION } from '../package.json';
+import { SERVER_KEY_PREFIX } from './config';
 
 /**
  * Metadata response from the API containing CDN information
@@ -14,6 +15,11 @@ interface FlagMetadataResponse {
 }
 
 const CLIENT_AGENT = 'zenmanage-javascript';
+// The API's key-type check for /v1/flag-json keys off X-ZEN-CLIENT-AGENT
+// per SDK family and can't otherwise tell a Node.js server-key caller apart
+// from a browser client-key one, since both run this same package — so the
+// agent string itself carries that distinction for server keys.
+const NODE_SERVER_CLIENT_AGENT = 'zenmanage-javascript-node';
 const DEFAULT_API_ENDPOINT = 'https://api.zenmanage.com';
 const RULES_PATH = '/v1/flag-json';
 const MAX_RETRIES = 3;
@@ -33,11 +39,14 @@ export class ApiClient {
     private readonly enableUsageReporting: boolean = false
   ) {
     this.baseUrl = apiEndpoint;
+    const clientAgent = environmentToken.startsWith(SERVER_KEY_PREFIX)
+      ? NODE_SERVER_CLIENT_AGENT
+      : CLIENT_AGENT;
     this.headers = {
       Accept: 'application/json',
       'Content-Type': 'application/json',
       'X-ZEN-API-KEY': environmentToken,
-      'X-ZEN-CLIENT-AGENT': `${CLIENT_AGENT}/${SDK_VERSION}`,
+      'X-ZEN-CLIENT-AGENT': `${clientAgent}/${SDK_VERSION}`,
     };
   }
 

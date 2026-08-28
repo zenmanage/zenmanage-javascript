@@ -83,7 +83,24 @@ describe('ApiClient security', () => {
   });
 
   describe('X-ZEN-CLIENT-AGENT header', () => {
-    it('reports the current package version, not a hardcoded one', async () => {
+    it('uses the plain agent family for a client key (browser usage), reporting the current package version', async () => {
+      const capturedHeaders: HeadersInit[] = [];
+      stubFetchForGetRules(capturedHeaders);
+
+      const client = new ApiClient('cli_test_token', 'https://api.example.com', createMockLogger());
+      await client.getRules();
+
+      const metadataHeaders = capturedHeaders[0] as Record<string, string>;
+      expect(metadataHeaders['X-ZEN-CLIENT-AGENT']).toBe(`zenmanage-javascript/${packageVersion}`);
+    });
+
+    it('uses the -node agent family for a server key (Node.js server-side usage)', async () => {
+      // The API's key-type check for a given SDK family keys off this exact
+      // string (see app/api's EnsureFlagJsonSdkTokenIsCompatible) — a server
+      // key must be distinguishable from a browser client key even though
+      // both run this same package, since app/api can't otherwise tell them
+      // apart and would reject a server key as unauthorized for the plain
+      // "zenmanage-javascript" family.
       const capturedHeaders: HeadersInit[] = [];
       stubFetchForGetRules(capturedHeaders);
 
@@ -91,7 +108,9 @@ describe('ApiClient security', () => {
       await client.getRules();
 
       const metadataHeaders = capturedHeaders[0] as Record<string, string>;
-      expect(metadataHeaders['X-ZEN-CLIENT-AGENT']).toBe(`zenmanage-javascript/${packageVersion}`);
+      expect(metadataHeaders['X-ZEN-CLIENT-AGENT']).toBe(
+        `zenmanage-javascript-node/${packageVersion}`
+      );
     });
   });
 
