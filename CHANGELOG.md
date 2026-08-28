@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.1] - 2026-08-28
+
+### Fixed
+
+- The `X-ZEN-CLIENT-AGENT` header now reports `zenmanage-javascript-node/<version>` when the SDK is used with a server key (`srv_...`), instead of the same `zenmanage-javascript/<version>` sent for browser client-key usage. The API's per-SDK-family key-type check couldn't otherwise distinguish a Node.js server-side caller from a browser one, since both run this same package, and was rejecting valid server-key usage with a 401.
+
 ## [3.3.0] - 2026-08-16
 
 ### Added

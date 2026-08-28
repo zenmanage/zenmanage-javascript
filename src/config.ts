@@ -5,7 +5,7 @@ import { ConfigurationError } from './errors';
 type Runtime = 'node' | 'browser';
 type KeyType = 'server' | 'client' | 'mobile' | 'unknown';
 
-const SERVER_KEY_PREFIX = 'srv_';
+export const SERVER_KEY_PREFIX = 'srv_';
 const CLIENT_KEY_PREFIX = 'cli_';
 const MOBILE_KEY_PREFIX = 'mob_';
 
