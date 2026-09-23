@@ -208,10 +208,13 @@ export class FlagManager {
     const flags: Flag[] = [];
 
     for (const flagData of flagsData) {
-      if (!isKnownFlagType(flagData.type)) {
+      // Optional chaining guards against a malformed payload entry (e.g. `null`)
+      // as well as an unrecognized `type` — either way this flag is skipped
+      // rather than throwing and taking the rest of the payload down with it.
+      if (!isKnownFlagType(flagData?.type)) {
         this.logger.warn('Skipping flag with unrecognized type; caller default will be used', {
-          key: flagData.key,
-          type: flagData.type,
+          key: flagData?.key,
+          type: flagData?.type,
         });
         continue;
       }

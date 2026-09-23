@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FlagManager } from '../src/flag-manager';
 import { ApiClient } from '../src/api-client';
 import { RuleEngine } from '../src/rule-engine';
@@ -123,16 +123,17 @@ function createMockApiClient(flags: FlagData[]): ApiClient {
 }
 
 describe('FlagManager tolerance of unknown flag types (json, ZEN-1667)', () => {
-  it('loads a payload containing a json-typed flag from the API without throwing, and leaves other flags unaffected', async () => {
-    const apiClient = createMockApiClient(mixedPayloadFlags);
-    const manager = new FlagManager(
-      apiClient,
-      createEmptyCache(),
-      new RuleEngine(),
-      3600,
-      createMockLogger()
-    );
+  let apiClient: ApiClient;
+  let logger: Logger;
+  let manager: FlagManager;
 
+  beforeEach(() => {
+    apiClient = createMockApiClient(mixedPayloadFlags);
+    logger = createMockLogger();
+    manager = new FlagManager(apiClient, createEmptyCache(), new RuleEngine(), 3600, logger);
+  });
+
+  it('loads a payload containing a json-typed flag from the API without throwing, and leaves other flags unaffected', async () => {
     const allFlags = await manager.all();
     const keys = allFlags.map((f) => f.getKey());
 
@@ -150,58 +151,22 @@ describe('FlagManager tolerance of unknown flag types (json, ZEN-1667)', () => {
   });
 
   it('resolves a json-typed flag looked up via single() to the caller-supplied default, not a thrown error or garbage value', async () => {
-    const apiClient = createMockApiClient(mixedPayloadFlags);
-    const manager = new FlagManager(
-      apiClient,
-      createEmptyCache(),
-      new RuleEngine(),
-      3600,
-      createMockLogger()
-    );
-
     const flag = await manager.single('json-flag', 'fallback-default');
 
     expect(flag.asString()).toBe('fallback-default');
   });
 
   it('resolves a json-typed flag to a boolean caller default correctly', async () => {
-    const apiClient = createMockApiClient(mixedPayloadFlags);
-    const manager = new FlagManager(
-      apiClient,
-      createEmptyCache(),
-      new RuleEngine(),
-      3600,
-      createMockLogger()
-    );
-
     const flag = await manager.single('json-flag', true);
 
     expect(flag.asBool()).toBe(true);
   });
 
   it('throws the standard "not found" error for a json-typed flag looked up with no default at all', async () => {
-    const apiClient = createMockApiClient(mixedPayloadFlags);
-    const manager = new FlagManager(
-      apiClient,
-      createEmptyCache(),
-      new RuleEngine(),
-      3600,
-      createMockLogger()
-    );
-
     await expect(manager.single('json-flag')).rejects.toThrow('Flag not found: json-flag');
   });
 
   it('still evaluates other flags correctly when a json-typed flag is looked up individually', async () => {
-    const apiClient = createMockApiClient(mixedPayloadFlags);
-    const manager = new FlagManager(
-      apiClient,
-      createEmptyCache(),
-      new RuleEngine(),
-      3600,
-      createMockLogger()
-    );
-
     const boolFlag = await manager.single('bool-flag', false);
     const stringFlag = await manager.single('string-flag', 'nope');
     const numberFlag = await manager.single('number-flag', 0);
@@ -212,10 +177,6 @@ describe('FlagManager tolerance of unknown flag types (json, ZEN-1667)', () => {
   });
 
   it('logs a warning (not a throw) when it encounters the unknown flag type', async () => {
-    const logger = createMockLogger();
-    const apiClient = createMockApiClient(mixedPayloadFlags);
-    const manager = new FlagManager(apiClient, createEmptyCache(), new RuleEngine(), 3600, logger);
-
     await manager.all();
 
     expect(logger.warn).toHaveBeenCalled();
