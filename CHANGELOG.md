@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.2] - 2026-09-23
+
+### Fixed
+
+- Flags with a `type` this SDK release doesn't recognize (e.g. a future `json` flag type) are now skipped when parsing a rules payload, instead of being evaluated with a silently mis-parsed value. Looking up such a flag by key now behaves exactly like a missing flag: it resolves to the caller-supplied default (or throws the standard "Flag not found" error if none was given), and every other flag in the payload is unaffected. Previously, `asString()`/`asNumber()`/`getValue()` on an unrecognized-type flag could return a garbage value (e.g. `"[object Object]"`) instead of the caller's default, and `single()` with no default would resolve the flag instead of throwing "not found". A warning is now logged once per unrecognized flag encountered while loading rules.
+
 ## [3.3.1] - 2026-08-28
 
 ### Fixed

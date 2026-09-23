@@ -11,6 +11,24 @@ import { isInBucket } from './rollout';
 const CACHE_KEY = 'zenmanage_rules';
 
 /**
+ * Flag types this SDK release knows how to evaluate. The API may serve
+ * additional types (e.g. `json`) that a given SDK release predates — see
+ * `isKnownFlagType`.
+ */
+const KNOWN_FLAG_TYPES: ReadonlySet<FlagType> = new Set(['boolean', 'string', 'number']);
+
+/**
+ * Narrows a flag's wire `type` to one this SDK release knows how to
+ * evaluate. The API is expected to add new flag types over time (e.g.
+ * `json`); an SDK release older than a given type must not throw or
+ * mis-parse when it encounters one, so unrecognized types are filtered out
+ * at load time rather than assumed to be one of the known variants.
+ */
+function isKnownFlagType(type: unknown): type is FlagType {
+  return KNOWN_FLAG_TYPES.has(type as FlagType);
+}
+
+/**
  * Main flag manager that orchestrates fetching, caching, and evaluating flags
  */
 export class FlagManager {
@@ -162,7 +180,7 @@ export class FlagManager {
         const data = JSON.parse(cached);
 
         if (data && Array.isArray(data.flags)) {
-          this.flags = data.flags.map((flagData: unknown) => Flag.fromObject(flagData as FlagData));
+          this.flags = this.parseFlags(data.flags as FlagData[]);
           return;
         }
       } catch (error) {
@@ -177,6 +195,34 @@ export class FlagManager {
   }
 
   /**
+   * Convert raw flag data from a rules payload into `Flag` instances,
+   * skipping any flag whose `type` this SDK release doesn't recognize
+   * (e.g. a `json` flag served to an older SDK). A skipped flag behaves
+   * exactly like a flag that isn't in the payload at all: `all()` omits
+   * it, and `single()` falls back to the caller-supplied default (or
+   * throws "Flag not found" if none was given) rather than returning a
+   * mis-parsed value. This keeps every other flag in the payload
+   * unaffected.
+   */
+  private parseFlags(flagsData: FlagData[]): Flag[] {
+    const flags: Flag[] = [];
+
+    for (const flagData of flagsData) {
+      if (!isKnownFlagType(flagData.type)) {
+        this.logger.warn('Skipping flag with unrecognized type; caller default will be used', {
+          key: flagData.key,
+          type: flagData.type,
+        });
+        continue;
+      }
+
+      flags.push(Flag.fromObject(flagData));
+    }
+
+    return flags;
+  }
+
+  /**
    * Load rules from the API and cache them
    */
   private async loadRulesFromApi(): Promise<void> {
@@ -185,7 +231,7 @@ export class FlagManager {
     try {
       const response = await this.apiClient.getRules();
 
-      this.flags = response.flags.map((flagData) => Flag.fromObject(flagData));
+      this.flags = this.parseFlags(response.flags);
 
       // Cache the response
       await this.cache.set(CACHE_KEY, JSON.stringify(response), this.cacheTtl);
