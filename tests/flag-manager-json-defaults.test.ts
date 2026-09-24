@@ -45,6 +45,26 @@ describe('FlagManager json default values', () => {
     expect(flag.getValue()).toEqual({ mode: 'light' });
   });
 
+  it('shallow-clones an object default so mutating the caller-supplied object afterward has no effect', async () => {
+    const manager = setupManager();
+    const original = { mode: 'light' };
+    const flag = await manager.single('theme-config', original);
+
+    original.mode = 'dark';
+
+    expect(flag.asJson()).toEqual({ mode: 'light' });
+  });
+
+  it('shallow-clones an array default so mutating the caller-supplied array afterward has no effect', async () => {
+    const manager = setupManager();
+    const original = [1, 2, 3];
+    const flag = await manager.single('rollout-plan', original);
+
+    original.push(4);
+
+    expect(flag.asJson()).toEqual([1, 2, 3]);
+  });
+
   it('still types a null default through the string fallback, not json', async () => {
     const manager = setupManager();
     // null is `typeof 'object'` in JS, but isn't a valid json flag value here —

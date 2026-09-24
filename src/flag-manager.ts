@@ -335,7 +335,13 @@ export class FlagManager {
       target = { value: { value: { number: defaultValue } } };
     } else if (typeof defaultValue === 'object' && defaultValue !== null) {
       type = 'json';
-      target = { value: { value: { json: defaultValue } } };
+      // Shallow-clone so a caller mutating the object/array they passed in
+      // afterward can't reach back into this flag's stored value.
+      target = {
+        value: {
+          value: { json: Array.isArray(defaultValue) ? [...defaultValue] : { ...defaultValue } },
+        },
+      };
     } else {
       type = 'string';
       target = { value: { value: { string: String(defaultValue) } } };
