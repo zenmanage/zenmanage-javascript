@@ -1,9 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { FlagManager } from '../src/flag-manager';
 import { RuleEngine } from '../src/rule-engine';
-import { ApiClient } from '../src/api-client';
-import type { FlagData, Logger } from '../src/types';
-import type { Cache } from '../src/cache';
+import {
+  createMockLogger,
+  createCacheWithFlags,
+  createMockApiClient,
+  buildFlag,
+} from './test-utils';
 
 /**
  * Regression guards for the flag-key index in FlagManager: `all()` must
@@ -12,58 +15,10 @@ import type { Cache } from '../src/cache';
  * through a Map instead of a linear scan.
  */
 
-function createMockLogger(): Logger {
-  return {
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  };
-}
-
-function createMockCache(flags: FlagData[]): Cache {
-  const data: Record<string, string> = {
-    zenmanage_rules: JSON.stringify({ version: '2026-02-24', flags }),
-  };
-
-  return {
-    get: vi.fn(async (key: string) => data[key] ?? null),
-    set: vi.fn(async () => {}),
-    has: vi.fn(async (key: string) => key in data),
-    delete: vi.fn(async () => {}),
-    clear: vi.fn(async () => {}),
-  };
-}
-
-function createMockApiClient(): ApiClient {
-  return {
-    getRules: vi.fn(async () => ({ version: '2026-02-24', flags: [] })),
-    reportUsage: vi.fn(async () => {}),
-  } as unknown as ApiClient;
-}
-
-function buildFlag(overrides: Partial<FlagData> = {}): FlagData {
-  return {
-    version: 'fla_test',
-    type: 'string',
-    key: 'test-flag',
-    name: 'Test Flag',
-    target: {
-      version: 'tar_test',
-      expired_at: null,
-      published_at: '2026-02-20T00:00:00+00:00',
-      scheduled_at: null,
-      value: { version: 'val_test', value: { string: 'default' } },
-    },
-    rules: [],
-    ...overrides,
-  };
-}
-
 describe('FlagManager flag-key indexing', () => {
   it('returns flags from all() in payload order', async () => {
     const flags = ['c-flag', 'a-flag', 'b-flag'].map((key) => buildFlag({ key }));
-    const cache = createMockCache(flags);
+    const cache = createCacheWithFlags(flags);
     const manager = new FlagManager(
       createMockApiClient(),
       cache,
@@ -100,7 +55,7 @@ describe('FlagManager flag-key indexing', () => {
         },
       }),
     ];
-    const cache = createMockCache(flags);
+    const cache = createCacheWithFlags(flags);
     const manager = new FlagManager(
       createMockApiClient(),
       cache,
@@ -120,7 +75,7 @@ describe('FlagManager flag-key indexing', () => {
       buildFlag({ key: 'dup-flag' }),
       buildFlag({ key: 'unique-flag' }),
     ];
-    const cache = createMockCache(flags);
+    const cache = createCacheWithFlags(flags);
     const manager = new FlagManager(
       createMockApiClient(),
       cache,
@@ -135,8 +90,17 @@ describe('FlagManager flag-key indexing', () => {
   });
 
   it('clears the stale index on a failed refresh so single() cannot see old flags', async () => {
-    const goodFlag = buildFlag({ key: 'stale-flag' });
-    const cache = createMockCache([goodFlag]);
+    const goodFlag = buildFlag({
+      key: 'stale-flag',
+      target: {
+        version: 'tar_test',
+        expired_at: null,
+        published_at: '2026-02-20T00:00:00+00:00',
+        scheduled_at: null,
+        value: { version: 'val_test', value: { string: 'default' } },
+      },
+    });
+    const cache = createCacheWithFlags([goodFlag]);
     const apiClient = createMockApiClient();
     apiClient.getRules = vi.fn(async () => {
       throw new Error('network error');

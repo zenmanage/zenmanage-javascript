@@ -1,55 +1,25 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { FlagManager } from '../src/flag-manager';
-import { ApiClient } from '../src/api-client';
 import { RuleEngine } from '../src/rule-engine';
 import { DefaultsCollection } from '../src/defaults-collection';
-import type { FlagData, Logger } from '../src/types';
+import type { FlagData } from '../src/types';
 import type { Cache } from '../src/cache';
+import {
+  createMockLogger,
+  createEmptyCache,
+  createCacheWithFlags,
+  createMockApiClient,
+  buildFlag,
+} from './test-utils';
 
-function createMockLogger(): Logger {
-  return {
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  };
-}
-
-function createEmptyCache(): Cache {
-  return createCacheWithFlags([]);
-}
-
-function createCacheWithFlag(flag: FlagData): Cache {
-  return createCacheWithFlags([flag]);
-}
-
-function createCacheWithFlags(flags: FlagData[]): Cache {
-  const data: Record<string, string> = {
-    zenmanage_rules: JSON.stringify({ version: '2026-02-24', flags }),
-  };
-
-  return {
-    get: vi.fn(async (key: string) => data[key] ?? null),
-    set: vi.fn(async () => {}),
-    has: vi.fn(async (key: string) => key in data),
-    delete: vi.fn(async () => {}),
-    clear: vi.fn(async () => {}),
-  };
-}
-
-function createMockApiClient(): ApiClient {
-  return {
-    getRules: vi.fn(async () => ({ version: '2026-02-24', flags: [] })),
-    reportUsage: vi.fn(async () => {}),
-  } as unknown as ApiClient;
-}
-
-function buildFlag(overrides: Partial<FlagData> = {}): FlagData {
-  return {
-    version: 'fla_test',
-    type: 'boolean',
+/**
+ * A flag with the key 'found-flag', resolving to boolean `true`. Used by tests
+ * that pre-load the cache and expect the lookup to succeed rather than fall
+ * back to a caller-supplied default.
+ */
+function foundFlag(): FlagData {
+  return buildFlag({
     key: 'found-flag',
-    name: 'Found Flag',
     target: {
       version: 'tar_test',
       expired_at: null,
@@ -60,9 +30,11 @@ function buildFlag(overrides: Partial<FlagData> = {}): FlagData {
         value: { boolean: true },
       },
     },
-    rules: [],
-    ...overrides,
-  };
+  });
+}
+
+function createCacheWithFlag(flag: FlagData): Cache {
+  return createCacheWithFlags([flag]);
 }
 
 /**
@@ -131,7 +103,7 @@ describe('FlagManager default value usage reporting', () => {
   });
 
   it('threads the caller-supplied default through to ApiClient.reportUsage when the flag is found', async () => {
-    const { apiClient, manager } = setupManager({ cache: createCacheWithFlag(buildFlag()) });
+    const { apiClient, manager } = setupManager({ cache: createCacheWithFlag(foundFlag()) });
 
     const flag = await manager.single('found-flag', false);
 
@@ -140,7 +112,7 @@ describe('FlagManager default value usage reporting', () => {
   });
 
   it('reports usage with no default when the flag is found and the caller passed none', async () => {
-    const { apiClient, manager } = setupManager({ cache: createCacheWithFlag(buildFlag()) });
+    const { apiClient, manager } = setupManager({ cache: createCacheWithFlag(foundFlag()) });
 
     await manager.single('found-flag');
 
@@ -150,7 +122,7 @@ describe('FlagManager default value usage reporting', () => {
   it('threads a DefaultsCollection value through to ApiClient.reportUsage when the flag is found', async () => {
     const defaults = DefaultsCollection.fromObject({ 'found-flag': 'global-default' });
     const { apiClient, manager } = setupManager({
-      cache: createCacheWithFlag(buildFlag()),
+      cache: createCacheWithFlag(foundFlag()),
       defaults,
     });
 
@@ -163,7 +135,7 @@ describe('FlagManager default value usage reporting', () => {
   it('prioritizes the inline default over a DefaultsCollection entry when the flag is found', async () => {
     const defaults = DefaultsCollection.fromObject({ 'found-flag': 'global-default' });
     const { apiClient, manager } = setupManager({
-      cache: createCacheWithFlag(buildFlag()),
+      cache: createCacheWithFlag(foundFlag()),
       defaults,
     });
 
