@@ -3,7 +3,13 @@ import { FlagManager } from '../src/flag-manager';
 import { ApiClient } from '../src/api-client';
 import { RuleEngine } from '../src/rule-engine';
 import type { FlagData, Logger } from '../src/types';
-import type { Cache } from '../src/cache';
+import {
+  createMockLogger,
+  createEmptyCache,
+  createCacheWithFlags,
+  createMockApiClient,
+  buildFlag,
+} from './test-utils';
 
 /**
  * ZEN-1667: the API is about to start serving a fourth flag type, `json`, in
@@ -12,61 +18,6 @@ import type { Cache } from '../src/cache';
  * must degrade the unknown flag to the caller's default while leaving every
  * other flag in the payload unaffected.
  */
-
-function createMockLogger(): Logger {
-  return {
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  };
-}
-
-function createEmptyCache(): Cache {
-  const data: Record<string, string> = {};
-  return {
-    get: vi.fn(async (key: string) => data[key] ?? null),
-    set: vi.fn(async () => {}),
-    has: vi.fn(async (key: string) => key in data),
-    delete: vi.fn(async () => {}),
-    clear: vi.fn(async () => {}),
-  };
-}
-
-function createCacheWithFlags(flags: FlagData[]): Cache {
-  const data: Record<string, string> = {
-    zenmanage_rules: JSON.stringify({ version: '2026-09-23', flags }),
-  };
-
-  return {
-    get: vi.fn(async (key: string) => data[key] ?? null),
-    set: vi.fn(async () => {}),
-    has: vi.fn(async (key: string) => key in data),
-    delete: vi.fn(async () => {}),
-    clear: vi.fn(async () => {}),
-  };
-}
-
-function buildFlag(overrides: Partial<FlagData> = {}): FlagData {
-  return {
-    version: 'fla_test',
-    type: 'boolean',
-    key: 'bool-flag',
-    name: 'Bool Flag',
-    target: {
-      version: 'tar_test',
-      expired_at: null,
-      published_at: '2026-09-01T00:00:00+00:00',
-      scheduled_at: null,
-      value: {
-        version: 'val_test',
-        value: { boolean: true },
-      },
-    },
-    rules: [],
-    ...overrides,
-  };
-}
 
 /**
  * A json-typed flag as the API is expected to start sending it. `type` and
@@ -113,13 +64,6 @@ function flagTarget(value: { boolean?: boolean; string?: string; number?: number
       value,
     },
   };
-}
-
-function createMockApiClient(flags: FlagData[]): ApiClient {
-  return {
-    getRules: vi.fn(async () => ({ version: '2026-09-23', flags })),
-    reportUsage: vi.fn(async () => {}),
-  } as unknown as ApiClient;
 }
 
 describe('FlagManager tolerance of unknown flag types (json, ZEN-1667)', () => {

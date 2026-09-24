@@ -1,74 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { FlagManager } from '../src/flag-manager';
 import { Flag } from '../src/flag';
 import { Context, Attribute } from '../src/context';
 import { RuleEngine } from '../src/rule-engine';
 import { DefaultsCollection } from '../src/defaults-collection';
-import type { FlagData, RolloutData, Logger } from '../src/types';
-import type { Cache } from '../src/cache';
-
-/**
- * Helper to create a mock logger that suppresses output
- */
-function createMockLogger(): Logger {
-  return {
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  };
-}
-
-/**
- * Helper to create a mock cache pre-loaded with flags
- */
-function createMockCache(flags: FlagData[]): Cache {
-  const data: Record<string, string> = {
-    zenmanage_rules: JSON.stringify({ version: '2026-02-24', flags }),
-  };
-
-  return {
-    get: vi.fn(async (key: string) => data[key] ?? null),
-    set: vi.fn(async () => {}),
-    has: vi.fn(async (key: string) => key in data),
-    delete: vi.fn(async () => {}),
-    clear: vi.fn(async () => {}),
-  };
-}
-
-/**
- * Helper to create a mock API client
- */
-function createMockApiClient() {
-  return {
-    getRules: vi.fn(async () => ({ version: '2026-02-24', flags: [] })),
-    reportUsage: vi.fn(async () => {}),
-  } as any;
-}
-
-/**
- * Helper to build a standard flag without rollout
- */
-function buildFlag(overrides: Partial<FlagData> = {}): FlagData {
-  return {
-    version: 'fla_test',
-    type: 'boolean',
-    key: 'test-flag',
-    name: 'Test Flag',
-    target: {
-      version: 'tar_fallback',
-      expired_at: null,
-      published_at: '2026-02-20T00:00:00+00:00',
-      scheduled_at: null,
-      value: {
-        version: 'val_fallback',
-        value: { boolean: false },
-      },
-    },
-    rules: [],
-    ...overrides,
-  };
-}
+import type { RolloutData, Logger } from '../src/types';
+import {
+  createMockLogger,
+  createCacheWithFlags,
+  createMockApiClient,
+  buildFlag,
+} from './test-utils';
 
 /**
  * Helper to build a rollout object
@@ -105,7 +47,7 @@ describe('FlagManager with rollouts', () => {
   describe('flag without rollout', () => {
     it('should evaluate normally when no rollout is present', async () => {
       const flagData = buildFlag({ key: 'no-rollout' });
-      const cache = createMockCache([flagData]);
+      const cache = createCacheWithFlags([flagData]);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -123,7 +65,7 @@ describe('FlagManager with rollouts', () => {
           },
         ],
       });
-      const cache = createMockCache([flagData]);
+      const cache = createCacheWithFlags([flagData]);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -142,7 +84,7 @@ describe('FlagManager with rollouts', () => {
         key: 'rollout-flag',
         rollout: buildRollout({ salt: 'test-salt', percentage: 50 }),
       });
-      const cache = createMockCache([flagData]);
+      const cache = createCacheWithFlags([flagData]);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -159,7 +101,7 @@ describe('FlagManager with rollouts', () => {
         key: 'rollout-flag',
         rollout: buildRollout({ salt: 'test-salt', percentage: 50 }),
       });
-      const cache = createMockCache([flagData]);
+      const cache = createCacheWithFlags([flagData]);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -176,7 +118,7 @@ describe('FlagManager with rollouts', () => {
         key: 'rollout-flag',
         rollout: buildRollout({ percentage: 100 }),
       });
-      const cache = createMockCache([flagData]);
+      const cache = createCacheWithFlags([flagData]);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -194,7 +136,7 @@ describe('FlagManager with rollouts', () => {
         key: 'full-rollout',
         rollout: buildRollout({ salt: 'any-salt', percentage: 100 }),
       });
-      const cache = createMockCache([flagData]);
+      const cache = createCacheWithFlags([flagData]);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -211,7 +153,7 @@ describe('FlagManager with rollouts', () => {
         key: 'zero-rollout',
         rollout: buildRollout({ salt: 'any-salt', percentage: 0 }),
       });
-      const cache = createMockCache([flagData]);
+      const cache = createCacheWithFlags([flagData]);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -256,7 +198,7 @@ describe('FlagManager with rollouts', () => {
           status: 'active',
         },
       });
-      const cache = createMockCache([flagData]);
+      const cache = createCacheWithFlags([flagData]);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -299,7 +241,7 @@ describe('FlagManager with rollouts', () => {
           status: 'active',
         },
       });
-      const cache = createMockCache([flagData]);
+      const cache = createCacheWithFlags([flagData]);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -336,7 +278,7 @@ describe('FlagManager with rollouts', () => {
           status: 'active',
         },
       });
-      const cache = createMockCache([flagData]);
+      const cache = createCacheWithFlags([flagData]);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -374,7 +316,7 @@ describe('FlagManager with rollouts', () => {
           status: 'active',
         },
       });
-      const cache = createMockCache([flagData]);
+      const cache = createCacheWithFlags([flagData]);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -407,7 +349,7 @@ describe('FlagManager with rollouts', () => {
           status: 'active',
         },
       });
-      const cache = createMockCache([flagData]);
+      const cache = createCacheWithFlags([flagData]);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -441,7 +383,7 @@ describe('FlagManager with rollouts', () => {
           status: 'active',
         },
       });
-      const cache = createMockCache([flagData]);
+      const cache = createCacheWithFlags([flagData]);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -472,7 +414,7 @@ describe('FlagManager with rollouts', () => {
           },
         }),
       ];
-      const cache = createMockCache(flags);
+      const cache = createCacheWithFlags(flags);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -521,7 +463,7 @@ describe('FlagManager with rollouts', () => {
         key: 'cached-rollout',
         rollout: buildRollout({ salt: 'test-salt', percentage: 50 }),
       });
-      const cache = createMockCache([flagData]);
+      const cache = createCacheWithFlags([flagData]);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -539,7 +481,7 @@ describe('FlagManager with rollouts', () => {
         rules: [],
         rollout: buildRollout({ salt: 'test-salt', percentage: 50, rules: [] }),
       });
-      const cache = createMockCache([flagData]);
+      const cache = createCacheWithFlags([flagData]);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -553,7 +495,7 @@ describe('FlagManager with rollouts', () => {
         key: 'ctx-no-type',
         rollout: buildRollout({ salt: 'test-salt', percentage: 50 }),
       });
-      const cache = createMockCache([flagData]);
+      const cache = createCacheWithFlags([flagData]);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -574,7 +516,7 @@ describe('FlagManager with rollouts', () => {
           rollout: buildRollout({ salt: 'salt-b', percentage: 90 }),
         }),
       ];
-      const cache = createMockCache(flags);
+      const cache = createCacheWithFlags(flags);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -590,7 +532,7 @@ describe('FlagManager with rollouts', () => {
         key: 'default-context',
         rollout: buildRollout({ salt: 'test-salt', percentage: 100 }),
       });
-      const cache = createMockCache([flagData]);
+      const cache = createCacheWithFlags([flagData]);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -625,7 +567,7 @@ describe('FlagManager with rollouts', () => {
           },
         ],
       });
-      const cache = createMockCache([flagData]);
+      const cache = createCacheWithFlags([flagData]);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -690,7 +632,7 @@ describe('FlagManager with rollouts', () => {
           status: 'active',
         },
       });
-      const cache = createMockCache([flagData]);
+      const cache = createCacheWithFlags([flagData]);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 
@@ -729,7 +671,7 @@ describe('FlagManager with rollouts', () => {
           status: 'active',
         },
       });
-      const cache = createMockCache([flagData]);
+      const cache = createCacheWithFlags([flagData]);
       const apiClient = createMockApiClient();
       const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
 

@@ -2,17 +2,8 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { ApiClient } from '../src/api-client';
 import { Context } from '../src/context';
 import { FetchRulesError } from '../src/errors';
-import type { Logger } from '../src/types';
 import { version as packageVersion } from '../package.json';
-
-function createMockLogger(): Logger {
-  return {
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  };
-}
+import { createMockLogger } from './test-utils';
 
 function makeJsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
