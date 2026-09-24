@@ -55,6 +55,22 @@ describe('FlagManager with rollouts', () => {
       expect(flag.asBool()).toBe(false);
     });
 
+    it('should return a flag with identical field values when there is no rollout and no matching rule', async () => {
+      const flagData = buildFlag({ key: 'no-rollout-identical-values' });
+      const cache = createCacheWithFlags([flagData]);
+      const apiClient = createMockApiClient();
+      const manager = new FlagManager(apiClient, cache, ruleEngine, 3600, logger);
+
+      const flag = await manager.single('no-rollout-identical-values');
+
+      expect(flag.getVersion()).toBe(flagData.version);
+      expect(flag.getType()).toBe(flagData.type);
+      expect(flag.getKey()).toBe(flagData.key);
+      expect(flag.getName()).toBe(flagData.name);
+      expect(flag.getTarget()).toEqual(flagData.target);
+      expect(flag.getRules()).toEqual(flagData.rules);
+    });
+
     it('should evaluate rules normally when no rollout is present', async () => {
       const flagData = buildFlag({
         key: 'rules-no-rollout',
