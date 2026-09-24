@@ -181,7 +181,9 @@ export class FlagManager {
         const data = JSON.parse(cached);
 
         if (data && Array.isArray(data.flags)) {
-          this.flags = this.parseFlags(data.flags as FlagData[]);
+          const parsed = this.parseFlags(data.flags as FlagData[]);
+          this.flags = parsed.flags;
+          this.flagsByKey = parsed.flagsByKey;
           return;
         }
       } catch (error) {
@@ -205,11 +207,13 @@ export class FlagManager {
    * mis-parsed value. This keeps every other flag in the payload
    * unaffected.
    *
-   * Also (re)builds the `flagsByKey` index used by `single()`, keeping
+   * Also builds the `flagsByKey` index used by `single()`, keeping
    * first-match-wins semantics on duplicate keys to match the previous
-   * linear-scan behavior.
+   * linear-scan behavior. Returns both rather than assigning `flagsByKey`
+   * as a side effect, so the caller assigns `this.flags`/`this.flagsByKey`
+   * together and the two can never fall out of sync.
    */
-  private parseFlags(flagsData: FlagData[]): Flag[] {
+  private parseFlags(flagsData: FlagData[]): { flags: Flag[]; flagsByKey: Map<string, Flag> } {
     const flags: Flag[] = [];
     const flagsByKey = new Map<string, Flag>();
 
@@ -233,8 +237,7 @@ export class FlagManager {
       }
     }
 
-    this.flagsByKey = flagsByKey;
-    return flags;
+    return { flags, flagsByKey };
   }
 
   /**
@@ -245,8 +248,9 @@ export class FlagManager {
 
     try {
       const response = await this.apiClient.getRules();
-
-      this.flags = this.parseFlags(response.flags);
+      const parsed = this.parseFlags(response.flags);
+      this.flags = parsed.flags;
+      this.flagsByKey = parsed.flagsByKey;
 
       // Cache the response
       await this.cache.set(CACHE_KEY, JSON.stringify(response), this.cacheTtl);
