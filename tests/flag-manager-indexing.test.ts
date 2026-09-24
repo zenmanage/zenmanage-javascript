@@ -36,6 +36,7 @@ describe('FlagManager flag-key indexing', () => {
     const flags = [
       buildFlag({
         key: 'dup-flag',
+        type: 'string',
         target: {
           version: 'tar_first',
           expired_at: null,
@@ -46,6 +47,7 @@ describe('FlagManager flag-key indexing', () => {
       }),
       buildFlag({
         key: 'dup-flag',
+        type: 'string',
         target: {
           version: 'tar_second',
           expired_at: null,
@@ -92,6 +94,7 @@ describe('FlagManager flag-key indexing', () => {
   it('clears the stale index on a failed refresh so single() cannot see old flags', async () => {
     const goodFlag = buildFlag({
       key: 'stale-flag',
+      type: 'string',
       target: {
         version: 'tar_test',
         expired_at: null,

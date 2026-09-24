@@ -7,7 +7,7 @@ import type { Cache } from '../src/cache';
 import {
   createMockLogger,
   createEmptyCache,
-  createCacheWithFlags,
+  createCacheWithFlag,
   createMockApiClient,
   buildFlag,
 } from './test-utils';
@@ -31,10 +31,6 @@ function foundFlag(): FlagData {
       },
     },
   });
-}
-
-function createCacheWithFlag(flag: FlagData): Cache {
-  return createCacheWithFlags([flag]);
 }
 
 /**
