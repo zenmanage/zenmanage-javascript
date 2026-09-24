@@ -407,6 +407,15 @@ const maxItems = flag.asNumber();
 console.log(maxItems); // 100, 250, etc.
 ```
 
+### JSON Flags
+
+```typescript
+// Structured configuration values (both JSON objects and JSON arrays are supported)
+const theme = await zenmanage.flags().single('theme-config', { mode: 'light', accent: '#4f46e5' });
+
+console.log(theme.asJson()); // { mode: 'light', accent: '#4f46e5' }
+```
+
 ### Type-Safe Access
 
 All flags have multiple accessor methods:
@@ -415,7 +424,21 @@ All flags have multiple accessor methods:
 - `asBool()`: Get value as boolean
 - `asString()`: Get value as string
 - `asNumber()`: Get value as number
+- `asJson()`: Get value as decoded JSON (an object or array)
 - `getValue()`: Get raw value
+
+### Value Types & Cross-Type Coercion
+
+A flag's `type` is one of `boolean`, `string`, `number`, or `json`. Calling the "wrong" accessor for a flag's type never throws — each accessor only recognizes its own value wrapper and falls back to a safe zero value for `json` rather than attempting a lossy conversion:
+
+| Called on →<br>Flag type ↓ | `asBool()` | `asString()` | `asNumber()` | `asJson()`          |
+| --------------------------- | ---------- | ------------ | ------------ | ------------------- |
+| `boolean`                    | the bool   | `"true"`/`"false"` | `1`/`0` | `{}`                 |
+| `string`                     | truthiness of the string | the string | parsed number or `0` | `{}` |
+| `number`                     | truthiness of the number | the number as a string | the number | `{}` |
+| `json`                       | `true`     | `""`         | `0`          | the decoded value    |
+
+**Default values** passed to `single(key, defaultValue)` or `DefaultsCollection` are typed from the JavaScript value itself: a plain object or array becomes a `json`-typed flag (not stringified), so `asJson()` on a missing flag with an object/array default returns that value unchanged.
 
 ## Advanced Features
 
@@ -697,6 +720,7 @@ Represents a feature flag.
 - `asBool()`: Get value as boolean
 - `asString()`: Get value as string
 - `asNumber()`: Get value as number
+- `asJson()`: Get value as decoded JSON (an object or array)
 - `getValue()`: Get raw value
 - `getKey()`: Get flag key
 - `getName()`: Get flag name

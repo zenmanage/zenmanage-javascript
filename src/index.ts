@@ -30,6 +30,7 @@ export type {
   Logger,
   FlagType,
   FlagValue,
+  JsonValue,
   ContextData,
   ContextAttribute,
   ContextValue,

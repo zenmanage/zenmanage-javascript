@@ -63,6 +63,18 @@ describe('Flag', () => {
       });
       expect(numberFlag.asBool()).toBe(false);
     });
+
+    it('should return true for a json value regardless of content', () => {
+      const objectFlag = new Flag('1', 'json', 'test', 'Test', {
+        value: { value: { json: { mode: 'light' } } },
+      });
+      expect(objectFlag.asBool()).toBe(true);
+
+      const emptyArrayFlag = new Flag('1', 'json', 'test', 'Test', {
+        value: { value: { json: [] } },
+      });
+      expect(emptyArrayFlag.asBool()).toBe(true);
+    });
   });
 
   describe('asString', () => {
@@ -87,6 +99,13 @@ describe('Flag', () => {
 
     it('should return empty string for invalid values', () => {
       const flag = new Flag('1', 'string', 'test', 'Test', { value: { value: {} } } as any);
+      expect(flag.asString()).toBe('');
+    });
+
+    it('should return empty string for a json value instead of stringifying it', () => {
+      const flag = new Flag('1', 'json', 'test', 'Test', {
+        value: { value: { json: { mode: 'light' } } },
+      });
       expect(flag.asString()).toBe('');
     });
   });
@@ -117,6 +136,48 @@ describe('Flag', () => {
       });
       expect(boolFlag.asNumber()).toBe(1);
     });
+
+    it('should return 0 for a json value', () => {
+      const flag = new Flag('1', 'json', 'test', 'Test', {
+        value: { value: { json: { count: 42 } } },
+      });
+      expect(flag.asNumber()).toBe(0);
+    });
+  });
+
+  describe('asJson', () => {
+    it('should return the decoded object value', () => {
+      const flag = new Flag('1', 'json', 'test', 'Test', {
+        value: { value: { json: { mode: 'light', accent: '#4f46e5' } } },
+      });
+      expect(flag.asJson()).toEqual({ mode: 'light', accent: '#4f46e5' });
+    });
+
+    it('should return the decoded array value', () => {
+      const flag = new Flag('1', 'json', 'test', 'Test', {
+        value: { value: { json: [1, 2, 3] } },
+      });
+      expect(flag.asJson()).toEqual([1, 2, 3]);
+    });
+
+    it('should return an empty object for non-json flags', () => {
+      const boolFlag = new Flag('1', 'boolean', 'test', 'Test', {
+        value: { value: { boolean: true } },
+      });
+      expect(boolFlag.asJson()).toEqual({});
+
+      const stringFlag = new Flag('1', 'string', 'test', 'Test', {
+        value: { value: { string: 'hello' } },
+      });
+      expect(stringFlag.asJson()).toEqual({});
+    });
+
+    it('should return an empty object for a bare JSON scalar', () => {
+      const flag = new Flag('1', 'json', 'test', 'Test', {
+        value: { value: { json: 5 as unknown as Record<string, unknown> } },
+      });
+      expect(flag.asJson()).toEqual({});
+    });
   });
 
   describe('getValue', () => {
@@ -137,6 +198,13 @@ describe('Flag', () => {
     it('should return the raw value for number', () => {
       const flag = new Flag('1', 'number', 'test', 'Test', { value: { value: { number: 42 } } });
       expect(flag.getValue()).toBe(42);
+    });
+
+    it('should return the raw value for json', () => {
+      const flag = new Flag('1', 'json', 'test', 'Test', {
+        value: { value: { json: { mode: 'light' } } },
+      });
+      expect(flag.getValue()).toEqual({ mode: 'light' });
     });
   });
 

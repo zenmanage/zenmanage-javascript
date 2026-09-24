@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-09-24
+
+### Added
+
+- Support for the `json` flag type: `Flag.asJson()` returns the decoded value (an object or array). Object/array default values passed to `single()` or `DefaultsCollection` are now typed as `json` instead of being coerced through the `string` fallback, so `asJson()` on a missing flag with such a default returns it unchanged.
+
+### Changed
+
+- `FlagManager.single()` now looks up flags by key in a `Map` built when rules are parsed, instead of scanning the flags array on every call — this is the hot path, hit once per flag check per request.
+
 ## [3.3.2] - 2026-09-23
 
 ### Fixed
