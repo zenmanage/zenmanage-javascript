@@ -1,4 +1,12 @@
-import type { FlagData, FlagType, FlagValue, Rule, FlagTarget, RolloutData } from './types';
+import type {
+  FlagData,
+  FlagType,
+  FlagValue,
+  JsonValue,
+  Rule,
+  FlagTarget,
+  RolloutData,
+} from './types';
 
 /**
  * Represents a feature flag with its metadata, rules, and target value
@@ -72,6 +80,9 @@ export class Flag {
     if ('string' in value) {
       return Boolean(value.string);
     }
+    if ('json' in value) {
+      return Boolean(value.json);
+    }
     return Boolean(Object.values(value)[0]);
   }
 
@@ -88,6 +99,11 @@ export class Flag {
     }
     if ('number' in value) {
       return String(value.number);
+    }
+    if ('json' in value) {
+      // A structured value has no meaningful string form — return the safe
+      // zero value instead of stringifying (e.g. "[object Object]").
+      return '';
     }
     // Fallback to first value found
     const firstValue = Object.values(value)[0];
@@ -109,11 +125,31 @@ export class Flag {
     if ('boolean' in value) {
       return value.boolean ? 1 : 0;
     }
+    if ('json' in value) {
+      // A structured value has no meaningful numeric form — return the safe
+      // zero value instead of parsing its stringified form.
+      return 0;
+    }
     // Fallback: try to parse first value found
     const firstValue = Object.values(value)[0];
     if (firstValue === undefined) return 0;
     const parsed = parseFloat(String(firstValue));
     return isNaN(parsed) ? 0 : parsed;
+  }
+
+  /**
+   * Get the flag value as decoded JSON (an object or array).
+   *
+   * Returns an empty object for a non-json flag, or for a json flag whose
+   * decoded value isn't itself an object/array (e.g. a bare JSON scalar) —
+   * the same safe-zero-value fallback the other accessors use for their types.
+   */
+  asJson(): JsonValue {
+    const value = this.target.value.value;
+    if ('json' in value && value.json !== null && typeof value.json === 'object') {
+      return value.json;
+    }
+    return {};
   }
 
   /**
@@ -124,6 +160,7 @@ export class Flag {
     if ('boolean' in value) return value.boolean as boolean;
     if ('string' in value) return value.string as string;
     if ('number' in value) return value.number as number;
+    if ('json' in value) return value.json as JsonValue;
     // Fallback: return the first value found or empty string
     const firstValue = Object.values(value)[0];
     return firstValue !== undefined ? firstValue : '';

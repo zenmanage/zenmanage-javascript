@@ -12,17 +12,17 @@ const CACHE_KEY = 'zenmanage_rules';
 
 /**
  * Flag types this SDK release knows how to evaluate. The API may serve
- * additional types (e.g. `json`) that a given SDK release predates — see
+ * additional types that a given SDK release predates — see
  * `isKnownFlagType`.
  */
-const KNOWN_FLAG_TYPES: ReadonlySet<FlagType> = new Set(['boolean', 'string', 'number']);
+const KNOWN_FLAG_TYPES: ReadonlySet<FlagType> = new Set(['boolean', 'string', 'number', 'json']);
 
 /**
  * Narrows a flag's wire `type` to one this SDK release knows how to
- * evaluate. The API is expected to add new flag types over time (e.g.
- * `json`); an SDK release older than a given type must not throw or
- * mis-parse when it encounters one, so unrecognized types are filtered out
- * at load time rather than assumed to be one of the known variants.
+ * evaluate. The API is expected to add new flag types over time; an SDK
+ * release older than a given type must not throw or mis-parse when it
+ * encounters one, so unrecognized types are filtered out at load time
+ * rather than assumed to be one of the known variants.
  */
 function isKnownFlagType(type: unknown): type is FlagType {
   return KNOWN_FLAG_TYPES.has(type as FlagType);
@@ -333,6 +333,9 @@ export class FlagManager {
     } else if (typeof defaultValue === 'number') {
       type = 'number';
       target = { value: { value: { number: defaultValue } } };
+    } else if (typeof defaultValue === 'object' && defaultValue !== null) {
+      type = 'json';
+      target = { value: { value: { json: defaultValue } } };
     } else {
       type = 'string';
       target = { value: { value: { string: String(defaultValue) } } };

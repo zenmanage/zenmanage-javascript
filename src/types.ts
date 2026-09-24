@@ -39,12 +39,19 @@ export interface Config {
 /**
  * Flag types
  */
-export type FlagType = 'boolean' | 'string' | 'number';
+export type FlagType = 'boolean' | 'string' | 'number' | 'json';
+
+/**
+ * A decoded JSON flag value. Both JSON objects and JSON arrays are valid —
+ * this SDK never wraps them in another type, matching how the rest of the
+ * codebase consumes parsed API responses.
+ */
+export type JsonValue = Record<string, unknown> | unknown[];
 
 /**
  * Flag value union type
  */
-export type FlagValue = boolean | string | number;
+export type FlagValue = boolean | string | number | JsonValue;
 
 /**
  * Context attribute value
@@ -100,6 +107,7 @@ export interface Rule {
       boolean?: boolean;
       string?: string;
       number?: number;
+      json?: JsonValue;
     };
   };
 }
@@ -118,6 +126,7 @@ export interface FlagTarget {
       boolean?: boolean;
       string?: string;
       number?: number;
+      json?: JsonValue;
     };
   };
 }
