@@ -33,6 +33,7 @@ function isKnownFlagType(type: unknown): type is FlagType {
  */
 export class FlagManager {
   private flags: Flag[] | null = null;
+  private flagsByKey: Map<string, Flag> | null = null;
   private context: Context;
   private defaults: DefaultsCollection;
 
@@ -63,19 +64,19 @@ export class FlagManager {
   async single(key: string, defaultValue?: FlagValue): Promise<Flag> {
     await this.ensureRulesLoaded();
 
-    for (const flag of this.flags || []) {
-      if (flag.getKey() === key) {
-        // Report usage for this flag, including the effective default (inline
-        // parameter, falling back to a DefaultsCollection entry) so it's recorded
-        // even when the flag was found and evaluated normally
-        await this.reportUsage(
-          key,
-          this.getUsageContext(),
-          this.resolveEffectiveDefault(key, defaultValue)
-        );
+    const flag = this.flagsByKey?.get(key);
 
-        return this.evaluateFlag(flag);
-      }
+    if (flag) {
+      // Report usage for this flag, including the effective default (inline
+      // parameter, falling back to a DefaultsCollection entry) so it's recorded
+      // even when the flag was found and evaluated normally
+      await this.reportUsage(
+        key,
+        this.getUsageContext(),
+        this.resolveEffectiveDefault(key, defaultValue)
+      );
+
+      return this.evaluateFlag(flag);
     }
 
     // Priority 1: Use inline default parameter if provided
@@ -180,7 +181,9 @@ export class FlagManager {
         const data = JSON.parse(cached);
 
         if (data && Array.isArray(data.flags)) {
-          this.flags = this.parseFlags(data.flags as FlagData[]);
+          const parsed = this.parseFlags(data.flags as FlagData[]);
+          this.flags = parsed.flags;
+          this.flagsByKey = parsed.flagsByKey;
           return;
         }
       } catch (error) {
@@ -203,9 +206,16 @@ export class FlagManager {
    * throws "Flag not found" if none was given) rather than returning a
    * mis-parsed value. This keeps every other flag in the payload
    * unaffected.
+   *
+   * Also builds the `flagsByKey` index used by `single()`, keeping
+   * first-match-wins semantics on duplicate keys to match the previous
+   * linear-scan behavior. Returns both rather than assigning `flagsByKey`
+   * as a side effect, so the caller assigns `this.flags`/`this.flagsByKey`
+   * together and the two can never fall out of sync.
    */
-  private parseFlags(flagsData: FlagData[]): Flag[] {
+  private parseFlags(flagsData: FlagData[]): { flags: Flag[]; flagsByKey: Map<string, Flag> } {
     const flags: Flag[] = [];
+    const flagsByKey = new Map<string, Flag>();
 
     for (const flagData of flagsData) {
       // Optional chaining guards against a malformed payload entry (e.g. `null`)
@@ -219,10 +229,15 @@ export class FlagManager {
         continue;
       }
 
-      flags.push(Flag.fromObject(flagData));
+      const flag = Flag.fromObject(flagData);
+      flags.push(flag);
+
+      if (!flagsByKey.has(flag.getKey())) {
+        flagsByKey.set(flag.getKey(), flag);
+      }
     }
 
-    return flags;
+    return { flags, flagsByKey };
   }
 
   /**
@@ -233,8 +248,9 @@ export class FlagManager {
 
     try {
       const response = await this.apiClient.getRules();
-
-      this.flags = this.parseFlags(response.flags);
+      const parsed = this.parseFlags(response.flags);
+      this.flags = parsed.flags;
+      this.flagsByKey = parsed.flagsByKey;
 
       // Cache the response
       await this.cache.set(CACHE_KEY, JSON.stringify(response), this.cacheTtl);
@@ -249,6 +265,7 @@ export class FlagManager {
 
       // If we fail to load rules, use empty array
       this.flags = [];
+      this.flagsByKey = new Map();
       throw error;
     }
   }
