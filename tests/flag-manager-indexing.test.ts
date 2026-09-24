@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { FlagManager } from '../src/flag-manager';
 import { RuleEngine } from '../src/rule-engine';
+import { ApiClient } from '../src/api-client';
 import type { FlagData, Logger } from '../src/types';
 import type { Cache } from '../src/cache';
 
@@ -34,11 +35,11 @@ function createMockCache(flags: FlagData[]): Cache {
   };
 }
 
-function createMockApiClient() {
+function createMockApiClient(): ApiClient {
   return {
     getRules: vi.fn(async () => ({ version: '2026-02-24', flags: [] })),
     reportUsage: vi.fn(async () => {}),
-  } as any;
+  } as unknown as ApiClient;
 }
 
 function buildFlag(overrides: Partial<FlagData> = {}): FlagData {
