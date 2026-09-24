@@ -1,4 +1,4 @@
-import type { Logger, FlagValue, FlagType, FlagData, FlagTarget } from './types';
+import type { Logger, FlagValue, FlagType, FlagData, FlagTarget, Rule } from './types';
 import type { Cache } from './cache';
 import { Flag } from './flag';
 import { Context } from './context';
@@ -278,8 +278,8 @@ export class FlagManager {
    */
   private evaluateFlag(flag: Flag): Flag {
     const rollout = flag.getRollout();
-    let target: FlagTarget;
-    let rules: import('./types').Rule[];
+    let target: FlagTarget = flag.getTarget();
+    let rules: Rule[] = flag.getRules();
 
     if (rollout) {
       // Rollout is active — determine which target to use via bucketing
@@ -290,59 +290,26 @@ export class FlagManager {
         // Context is in the rollout bucket — use rollout target & rules
         target = rollout.target;
         rules = rollout.rules || [];
-      } else {
-        // Context is outside the rollout bucket — use fallback target & rules
-        target = flag.getTarget();
-        rules = flag.getRules();
       }
-    } else {
-      // No rollout — evaluate normally
-      target = flag.getTarget();
-      rules = flag.getRules();
+      // Otherwise keep the fallback target & rules already selected above
     }
 
-    if (rules.length === 0) {
-      // No rules, return a flag with the selected target
-      if (target === flag.getTarget() && !rollout) {
-        return flag;
+    if (rules.length > 0) {
+      // Evaluate rules against context
+      const matchedRule = this.ruleEngine.evaluate(rules, this.context);
+
+      if (matchedRule) {
+        // Matched rule's value overrides the selected target's value
+        target = {
+          version: target.version,
+          expired_at: target.expired_at,
+          published_at: target.published_at,
+          scheduled_at: target.scheduled_at,
+          value: matchedRule.value,
+        };
       }
-      return new Flag(
-        flag.getVersion(),
-        flag.getType(),
-        flag.getKey(),
-        flag.getName(),
-        target,
-        rules
-      );
     }
 
-    // Evaluate rules against context
-    const matchedRule = this.ruleEngine.evaluate(rules, this.context);
-
-    if (matchedRule) {
-      // Create a new flag with the matched rule's value as target
-      const newTarget: FlagTarget = {
-        version: target.version,
-        expired_at: target.expired_at,
-        published_at: target.published_at,
-        scheduled_at: target.scheduled_at,
-        value: matchedRule.value,
-      };
-
-      return new Flag(
-        flag.getVersion(),
-        flag.getType(),
-        flag.getKey(),
-        flag.getName(),
-        newTarget,
-        rules
-      );
-    }
-
-    // No rule matched, return flag with selected target
-    if (target === flag.getTarget() && !rollout) {
-      return flag;
-    }
     return new Flag(
       flag.getVersion(),
       flag.getType(),
