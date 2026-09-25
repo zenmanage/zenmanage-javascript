@@ -178,7 +178,7 @@ export class FlagManager {
       await this.ensureRulesLoaded();
     } catch (error) {
       this.logger.warn('Failed to load rules, falling back to configured defaults', {
-        error: (error as Error).message,
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   }
