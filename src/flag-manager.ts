@@ -52,7 +52,7 @@ export class FlagManager {
    * Get all flags evaluated against the current context
    */
   async all(): Promise<Flag[]> {
-    await this.ensureRulesLoaded();
+    await this.loadFlagsOrFallBackToDefaults();
 
     const flags = this.flags || [];
     return flags.map((flag) => this.evaluateFlag(flag));
@@ -62,7 +62,7 @@ export class FlagManager {
    * Get a single flag by key
    */
   async single(key: string, defaultValue?: FlagValue): Promise<Flag> {
-    await this.ensureRulesLoaded();
+    await this.loadFlagsOrFallBackToDefaults();
 
     const flag = this.flagsByKey?.get(key);
 
@@ -161,6 +161,26 @@ export class FlagManager {
   async refreshRules(): Promise<void> {
     this.logger.info('Refreshing rules from API');
     await this.loadRulesFromApi();
+  }
+
+  /**
+   * Ensure rules are loaded, falling back to an empty flag set (so callers fall
+   * through to their own default handling) if rule-loading fails outright —
+   * e.g. an unreachable API or an invalid/misconfigured environment token.
+   *
+   * Used by all()/single() so a client that can't resolve its environment still
+   * serves caller-supplied defaults instead of throwing. refreshRules() calls
+   * loadRulesFromApi() directly and is unaffected, since an explicit refresh
+   * should surface its own failure to the caller.
+   */
+  private async loadFlagsOrFallBackToDefaults(): Promise<void> {
+    try {
+      await this.ensureRulesLoaded();
+    } catch (error) {
+      this.logger.warn('Failed to load rules, falling back to configured defaults', {
+        error: (error as Error).message,
+      });
+    }
   }
 
   /**
