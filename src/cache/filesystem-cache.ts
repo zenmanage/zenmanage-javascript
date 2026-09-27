@@ -64,7 +64,7 @@ export class FileSystemCache implements Cache {
       }
 
       return item.value;
-    } catch (error) {
+    } catch {
       // File doesn't exist or is invalid
       return null;
     }
@@ -100,7 +100,7 @@ export class FileSystemCache implements Cache {
 
     try {
       await unlink(filePath);
-    } catch (error) {
+    } catch {
       // File doesn't exist, ignore
     }
   }
