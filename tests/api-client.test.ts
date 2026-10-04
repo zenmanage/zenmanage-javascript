@@ -104,74 +104,49 @@ describe('ApiClient security', () => {
       );
     });
 
-    it('reports an overridden agent and version instead of the auto-detected default', async () => {
-      const capturedHeaders: HeadersInit[] = [];
-      stubFetchForGetRules(capturedHeaders);
-
-      const client = new ApiClient(
+    // A wrapper package that sets its own agent (e.g. zenmanage-react) is accepted by the API
+    // for both key types, so its agent string must reach the wire unchanged, with no -node
+    // suffix even for a server key (SSR).
+    it.each([
+      [
+        'an overridden agent and version instead of the auto-detected default',
         'cli_test_token',
-        'https://api.example.com',
-        createMockLogger(),
-        false,
-        { agent: 'zenmanage-react', version: '1.0.0' }
-      );
-      await client.getRules();
-
-      const metadataHeaders = capturedHeaders[0] as Record<string, string>;
-      expect(metadataHeaders['X-ZEN-CLIENT-AGENT']).toBe('zenmanage-react/1.0.0');
-    });
-
-    it('does not add the -node suffix to an overridden agent when a server key is used', async () => {
-      // A wrapper package that sets its own agent (e.g. zenmanage-react) is accepted for both
-      // key types by the API, so its agent string must reach the wire unchanged for SSR use.
-      const capturedHeaders: HeadersInit[] = [];
-      stubFetchForGetRules(capturedHeaders);
-
-      const client = new ApiClient(
+        { agent: 'zenmanage-react', version: '1.0.0' },
+        'zenmanage-react/1.0.0',
+      ],
+      [
+        'an overridden agent without the -node suffix when a server key is used',
         'srv_test_token',
-        'https://api.example.com',
-        createMockLogger(),
-        false,
-        { agent: 'zenmanage-react', version: '1.0.0' }
-      );
-      await client.getRules();
-
-      const metadataHeaders = capturedHeaders[0] as Record<string, string>;
-      expect(metadataHeaders['X-ZEN-CLIENT-AGENT']).toBe('zenmanage-react/1.0.0');
-    });
-
-    it('falls back to the current package version when only the agent is overridden', async () => {
-      const capturedHeaders: HeadersInit[] = [];
-      stubFetchForGetRules(capturedHeaders);
-
-      const client = new ApiClient(
+        { agent: 'zenmanage-react', version: '1.0.0' },
+        'zenmanage-react/1.0.0',
+      ],
+      [
+        'the current package version when only the agent is overridden',
         'cli_test_token',
-        'https://api.example.com',
-        createMockLogger(),
-        false,
-        { agent: 'zenmanage-react' }
-      );
-      await client.getRules();
-
-      const metadataHeaders = capturedHeaders[0] as Record<string, string>;
-      expect(metadataHeaders['X-ZEN-CLIENT-AGENT']).toBe(`zenmanage-react/${packageVersion}`);
-    });
-
-    it('keeps the auto-detected agent when only the version is overridden', async () => {
+        { agent: 'zenmanage-react' },
+        `zenmanage-react/${packageVersion}`,
+      ],
+      [
+        'the auto-detected agent when only the version is overridden',
+        'srv_test_token',
+        { version: '9.9.9' },
+        'zenmanage-javascript-node/9.9.9',
+      ],
+    ])('reports %s', async (_label, token, clientIdentity, expectedAgent) => {
       const capturedHeaders: HeadersInit[] = [];
       stubFetchForGetRules(capturedHeaders);
 
       const client = new ApiClient(
-        'srv_test_token',
+        token,
         'https://api.example.com',
         createMockLogger(),
         false,
-        { version: '9.9.9' }
+        clientIdentity
       );
       await client.getRules();
 
       const metadataHeaders = capturedHeaders[0] as Record<string, string>;
-      expect(metadataHeaders['X-ZEN-CLIENT-AGENT']).toBe('zenmanage-javascript-node/9.9.9');
+      expect(metadataHeaders['X-ZEN-CLIENT-AGENT']).toBe(expectedAgent);
     });
   });
 
