@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.0] - 2026-10-04
+
+### Added
+
+- `ConfigBuilder.withClientAgent(name)` and `ConfigBuilder.withSdkVersion(version)` let a package that wraps this SDK (such as `@zenmanage/react`) report itself in the `X-ZEN-CLIENT-AGENT` header instead of the default `zenmanage-javascript` / `zenmanage-javascript-node`. An overridden agent is sent exactly as given, with no `-node` suffix for server keys. `build()` throws a `ConfigurationError` if either value is empty or contains characters that aren't valid in the header (letters, digits, `.`, `_` and `-` only, plus `+` in versions).
+
 ### Changed
 
 - Upgraded the dev tooling to `vitest` and `@vitest/coverage-v8` 5. This only affects contributors and CI — the published package is unchanged. Vitest 5 does not run on Node 18, so the CI matrix is now Node 20, 22 and 24. The package's `engines` field is unchanged.

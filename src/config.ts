@@ -9,6 +9,9 @@ export const SERVER_KEY_PREFIX = 'srv_';
 const CLIENT_KEY_PREFIX = 'cli_';
 const MOBILE_KEY_PREFIX = 'mob_';
 
+const CLIENT_AGENT_PATTERN = /^[A-Za-z0-9._-]+$/;
+const SDK_VERSION_PATTERN = /^[A-Za-z0-9._+-]+$/;
+
 /**
  * Default logger that does nothing (null logger pattern)
  */
@@ -150,6 +153,24 @@ export class ConfigBuilder {
   }
 
   /**
+   * Override the client agent family sent in the X-ZEN-CLIENT-AGENT header.
+   * Intended for packages that wrap this SDK (e.g. `zenmanage-react`) and must identify
+   * themselves to the API; pair it with `withSdkVersion()` to report the wrapper's version.
+   */
+  withClientAgent(clientAgent: string): this {
+    this.config.clientAgent = clientAgent;
+    return this;
+  }
+
+  /**
+   * Set the version reported alongside the client agent (default: this SDK's own version)
+   */
+  withSdkVersion(sdkVersion: string): this {
+    this.config.sdkVersion = sdkVersion;
+    return this;
+  }
+
+  /**
    * Build and validate the configuration
    */
   build(): Config {
@@ -158,6 +179,7 @@ export class ConfigBuilder {
     }
 
     this.validateEnvironmentTokenForRuntime(this.config.environmentToken);
+    this.validateClientIdentity();
 
     if (
       this.config.cacheBackend === 'filesystem' &&
@@ -173,6 +195,26 @@ export class ConfigBuilder {
     }
 
     return this.config as Config;
+  }
+
+  /**
+   * The API splits X-ZEN-CLIENT-AGENT on the first "/" to find the SDK family, so neither part
+   * may be empty or contain a "/" (or whitespace/control characters, which are invalid in a header).
+   */
+  private validateClientIdentity(): void {
+    const { clientAgent, sdkVersion } = this.config;
+
+    if (clientAgent !== undefined && !CLIENT_AGENT_PATTERN.test(clientAgent)) {
+      throw new ConfigurationError(
+        `Invalid client agent "${clientAgent}". Use letters, digits, ".", "_" and "-" only, e.g. "zenmanage-react".`
+      );
+    }
+
+    if (sdkVersion !== undefined && !SDK_VERSION_PATTERN.test(sdkVersion)) {
+      throw new ConfigurationError(
+        `Invalid SDK version "${sdkVersion}". Use a semantic version such as "1.0.0".`
+      );
+    }
   }
 
   /**

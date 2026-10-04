@@ -22,7 +22,8 @@ export class Zenmanage {
       config.environmentToken,
       config.apiEndpoint,
       logger,
-      config.enableUsageReporting
+      config.enableUsageReporting,
+      { agent: config.clientAgent, version: config.sdkVersion }
     );
 
     // Create rule engine

@@ -1,8 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { Zenmanage } from '../src/zenmanage';
 import { ConfigBuilder } from '../src/config';
 import { ConfigurationError } from '../src/errors';
 import { InMemoryCache } from '../src/cache';
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 describe('Zenmanage', () => {
   describe('constructor', () => {
@@ -95,6 +100,40 @@ describe('Zenmanage', () => {
       const flags2 = zenmanage.flags();
 
       expect(flags1).toBe(flags2);
+    });
+  });
+
+  describe('client agent override', () => {
+    function stubFetch(capturedHeaders: Record<string, string>[]): void {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation((url: string, options: RequestInit) => {
+          capturedHeaders.push(options.headers as Record<string, string>);
+          const body = url.includes('/v1/flag-json')
+            ? { data: { cdn: 'https://cdn.example.com', path: '/rules.json' } }
+            : { version: '1', flags: [] };
+          return Promise.resolve(
+            new Response(JSON.stringify(body), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            })
+          );
+        })
+      );
+    }
+
+    it('sends the configured client agent and version when loading rules', async () => {
+      const capturedHeaders: Record<string, string>[] = [];
+      stubFetch(capturedHeaders);
+
+      const config = ConfigBuilder.create()
+        .withEnvironmentToken('srv_test_123')
+        .withClientAgent('zenmanage-react')
+        .withSdkVersion('1.0.0')
+        .build();
+      await new Zenmanage(config).flags().all();
+
+      expect(capturedHeaders[0]['X-ZEN-CLIENT-AGENT']).toBe('zenmanage-react/1.0.0');
     });
   });
 });

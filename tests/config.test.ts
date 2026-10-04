@@ -117,6 +117,48 @@ describe('ConfigBuilder', () => {
       expect(config.logger).toBe(customLogger);
     });
 
+    it('should leave the client agent and SDK version unset by default', () => {
+      const config = ConfigBuilder.create().withEnvironmentToken('srv_test_123').build();
+
+      expect(config.clientAgent).toBeUndefined();
+      expect(config.sdkVersion).toBeUndefined();
+    });
+
+    it('should allow overriding the client agent and SDK version', () => {
+      const config = ConfigBuilder.create()
+        .withEnvironmentToken('srv_test_123')
+        .withClientAgent('zenmanage-react')
+        .withSdkVersion('1.0.0-rc.1+build.5')
+        .build();
+
+      expect(config.clientAgent).toBe('zenmanage-react');
+      expect(config.sdkVersion).toBe('1.0.0-rc.1+build.5');
+    });
+
+    it.each(['', 'zenmanage/react', 'zenmanage react', 'zenmanage-react\r\nX-Evil: 1'])(
+      'should reject the invalid client agent %j',
+      (clientAgent) => {
+        const builder = ConfigBuilder.create()
+          .withEnvironmentToken('srv_test_123')
+          .withClientAgent(clientAgent);
+
+        expect(() => builder.build()).toThrow(ConfigurationError);
+        expect(() => builder.build()).toThrow('Invalid client agent');
+      }
+    );
+
+    it.each(['', '1.0.0/evil', '1.0 0', '1.0.0\n'])(
+      'should reject the invalid SDK version %j',
+      (sdkVersion) => {
+        const builder = ConfigBuilder.create()
+          .withEnvironmentToken('srv_test_123')
+          .withSdkVersion(sdkVersion);
+
+        expect(() => builder.build()).toThrow(ConfigurationError);
+        expect(() => builder.build()).toThrow('Invalid SDK version');
+      }
+    );
+
     it('should accept server keys in Node.js runtime', () => {
       const config = ConfigBuilder.create().withEnvironmentToken('srv_server_test').build();
 

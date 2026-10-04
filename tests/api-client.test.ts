@@ -103,6 +103,76 @@ describe('ApiClient security', () => {
         `zenmanage-javascript-node/${packageVersion}`
       );
     });
+
+    it('reports an overridden agent and version instead of the auto-detected default', async () => {
+      const capturedHeaders: HeadersInit[] = [];
+      stubFetchForGetRules(capturedHeaders);
+
+      const client = new ApiClient(
+        'cli_test_token',
+        'https://api.example.com',
+        createMockLogger(),
+        false,
+        { agent: 'zenmanage-react', version: '1.0.0' }
+      );
+      await client.getRules();
+
+      const metadataHeaders = capturedHeaders[0] as Record<string, string>;
+      expect(metadataHeaders['X-ZEN-CLIENT-AGENT']).toBe('zenmanage-react/1.0.0');
+    });
+
+    it('does not add the -node suffix to an overridden agent when a server key is used', async () => {
+      // A wrapper package that sets its own agent (e.g. zenmanage-react) is accepted for both
+      // key types by the API, so its agent string must reach the wire unchanged for SSR use.
+      const capturedHeaders: HeadersInit[] = [];
+      stubFetchForGetRules(capturedHeaders);
+
+      const client = new ApiClient(
+        'srv_test_token',
+        'https://api.example.com',
+        createMockLogger(),
+        false,
+        { agent: 'zenmanage-react', version: '1.0.0' }
+      );
+      await client.getRules();
+
+      const metadataHeaders = capturedHeaders[0] as Record<string, string>;
+      expect(metadataHeaders['X-ZEN-CLIENT-AGENT']).toBe('zenmanage-react/1.0.0');
+    });
+
+    it('falls back to the current package version when only the agent is overridden', async () => {
+      const capturedHeaders: HeadersInit[] = [];
+      stubFetchForGetRules(capturedHeaders);
+
+      const client = new ApiClient(
+        'cli_test_token',
+        'https://api.example.com',
+        createMockLogger(),
+        false,
+        { agent: 'zenmanage-react' }
+      );
+      await client.getRules();
+
+      const metadataHeaders = capturedHeaders[0] as Record<string, string>;
+      expect(metadataHeaders['X-ZEN-CLIENT-AGENT']).toBe(`zenmanage-react/${packageVersion}`);
+    });
+
+    it('keeps the auto-detected agent when only the version is overridden', async () => {
+      const capturedHeaders: HeadersInit[] = [];
+      stubFetchForGetRules(capturedHeaders);
+
+      const client = new ApiClient(
+        'srv_test_token',
+        'https://api.example.com',
+        createMockLogger(),
+        false,
+        { version: '9.9.9' }
+      );
+      await client.getRules();
+
+      const metadataHeaders = capturedHeaders[0] as Record<string, string>;
+      expect(metadataHeaders['X-ZEN-CLIENT-AGENT']).toBe('zenmanage-javascript-node/9.9.9');
+    });
   });
 
   describe('URL injection: flag key encoding', () => {
