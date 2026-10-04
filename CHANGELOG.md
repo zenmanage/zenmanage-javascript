@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.0] - 2026-10-04
+
+### Added
+
+- `ConfigBuilder.withClientAgent(name)` and `ConfigBuilder.withSdkVersion(version)` let a package that wraps this SDK (such as `@zenmanage/react`) report itself in the `X-ZEN-CLIENT-AGENT` header instead of the default `zenmanage-javascript` / `zenmanage-javascript-node`. An overridden agent is sent exactly as given, with no `-node` suffix for server keys. `build()` throws a `ConfigurationError` if either value is empty or contains characters that aren't valid in the header (letters, digits, `.`, `_` and `-` only, plus `+` in versions).
+
 ### Changed
 
 - Upgraded the dev tooling to `vitest` and `@vitest/coverage-v8` 5. This only affects contributors and CI — the published package is unchanged. Vitest 5 does not run on Node 18, so the CI matrix is now Node 20, 22 and 24. The package's `engines` field is unchanged.
@@ -14,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `single()` and `all()` now fall back to the caller-supplied default (inline parameter or `DefaultsCollection` entry) instead of throwing when rule-loading fails outright — e.g. an unreachable API or an invalid/misconfigured environment token. Previously an evaluation error on the network call was thrown all the way through `single()`/`all()` even when a usable default was available, so a client that couldn't resolve its environment couldn't serve defaults either.
+- Usage reporting now defaults to on when `enableUsageReporting` isn't set, as `Config` has always documented (`default: true`). `ConfigBuilder` always sets it, so builder users were never affected. A `Config` object written by hand without that field silently had usage reporting off, because the internal API client defaulted to `false`. If you depend on that, set `enableUsageReporting: false`.
+- `new Zenmanage(config)` now applies the defaults `Config` documents for a `Config` written by hand, instead of throwing or crashing. Omitting `cacheBackend` threw `Invalid cache backend: undefined`; it now defaults to `'memory'`. Omitting `logger` crashed with `Cannot read properties of undefined` the first time the SDK logged, for example when rules failed to load; it now defaults to a silent logger. `ConfigBuilder` already set both, so builder users were never affected.
 
 ## [3.4.0] - 2026-09-24
 

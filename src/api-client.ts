@@ -26,6 +26,15 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 100;
 
 /**
+ * Overrides for the X-ZEN-CLIENT-AGENT header, for packages that wrap this SDK and report
+ * themselves instead of the auto-detected default.
+ */
+export interface ClientIdentity {
+  agent?: string;
+  version?: string;
+}
+
+/**
  * API client for communicating with the Zenmanage service
  */
 export class ApiClient {
@@ -36,17 +45,20 @@ export class ApiClient {
     environmentToken: string,
     apiEndpoint: string = DEFAULT_API_ENDPOINT,
     private readonly logger: Logger,
-    private readonly enableUsageReporting: boolean = false
+    private readonly enableUsageReporting: boolean = true,
+    clientIdentity: ClientIdentity = {}
   ) {
     this.baseUrl = apiEndpoint;
-    const clientAgent = environmentToken.startsWith(SERVER_KEY_PREFIX)
+    const defaultAgent = environmentToken.startsWith(SERVER_KEY_PREFIX)
       ? NODE_SERVER_CLIENT_AGENT
       : CLIENT_AGENT;
+    const clientAgent = clientIdentity.agent ?? defaultAgent;
+    const sdkVersion = clientIdentity.version ?? SDK_VERSION;
     this.headers = {
       Accept: 'application/json',
       'Content-Type': 'application/json',
       'X-ZEN-API-KEY': environmentToken,
-      'X-ZEN-CLIENT-AGENT': `${clientAgent}/${SDK_VERSION}`,
+      'X-ZEN-CLIENT-AGENT': `${clientAgent}/${sdkVersion}`,
     };
   }
 

@@ -210,6 +210,20 @@ const config = ConfigBuilder.create()
 const zenmanage = new Zenmanage(config);
 ```
 
+### Client Agent (for packages that wrap this SDK)
+
+Every request carries an `X-ZEN-CLIENT-AGENT` header so the API can tell which SDK is calling. It defaults to `zenmanage-javascript/<version>` (or `zenmanage-javascript-node/<version>` with a server key). If you publish a package that wraps this SDK, such as a framework integration, report your own package instead:
+
+```typescript
+const config = ConfigBuilder.create()
+  .withEnvironmentToken('cli_your_client_key_here')
+  .withClientAgent('zenmanage-react') // Your package's registered agent name
+  .withSdkVersion('1.0.0') // Your package's version (default: this SDK's version)
+  .build();
+```
+
+The API only accepts agent names it knows about, so register a new one with Zenmanage before you ship. Names may contain letters, digits, `.`, `_` and `-`; `build()` throws a `ConfigurationError` otherwise.
+
 ### Configuration from Environment Variables (Node.js only)
 
 ```typescript
@@ -682,6 +696,8 @@ Fluent builder for creating configuration.
 - `withUsageReporting(enabled)`: Enable or disable usage tracking
 - `withApiEndpoint(url)`: Set custom API endpoint
 - `withLogger(logger)`: Set custom logger
+- `withClientAgent(name)`: Override the client agent sent in `X-ZEN-CLIENT-AGENT` (for wrapper packages)
+- `withSdkVersion(version)`: Set the version reported with the client agent (default: this SDK's version)
 - `build()`: Build the configuration
 
 ### FlagManager

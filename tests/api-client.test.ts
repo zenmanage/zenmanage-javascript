@@ -103,6 +103,51 @@ describe('ApiClient security', () => {
         `zenmanage-javascript-node/${packageVersion}`
       );
     });
+
+    // A wrapper package that sets its own agent (e.g. zenmanage-react) is accepted by the API
+    // for both key types, so its agent string must reach the wire unchanged, with no -node
+    // suffix even for a server key (SSR).
+    it.each([
+      [
+        'an overridden agent and version instead of the auto-detected default',
+        'cli_test_token',
+        { agent: 'zenmanage-react', version: '1.0.0' },
+        'zenmanage-react/1.0.0',
+      ],
+      [
+        'an overridden agent without the -node suffix when a server key is used',
+        'srv_test_token',
+        { agent: 'zenmanage-react', version: '1.0.0' },
+        'zenmanage-react/1.0.0',
+      ],
+      [
+        'the current package version when only the agent is overridden',
+        'cli_test_token',
+        { agent: 'zenmanage-react' },
+        `zenmanage-react/${packageVersion}`,
+      ],
+      [
+        'the auto-detected agent when only the version is overridden',
+        'srv_test_token',
+        { version: '9.9.9' },
+        'zenmanage-javascript-node/9.9.9',
+      ],
+    ])('reports %s', async (_label, token, clientIdentity, expectedAgent) => {
+      const capturedHeaders: HeadersInit[] = [];
+      stubFetchForGetRules(capturedHeaders);
+
+      const client = new ApiClient(
+        token,
+        'https://api.example.com',
+        createMockLogger(),
+        false,
+        clientIdentity
+      );
+      await client.getRules();
+
+      const metadataHeaders = capturedHeaders[0] as Record<string, string>;
+      expect(metadataHeaders['X-ZEN-CLIENT-AGENT']).toBe(expectedAgent);
+    });
   });
 
   describe('URL injection: flag key encoding', () => {
@@ -124,6 +169,30 @@ describe('ApiClient security', () => {
       expect(capturedUrls.some((u) => u.includes('flag%2Fwith%2Fslashes'))).toBe(true);
       expect(capturedUrls.every((u) => !u.includes('/flag/with/slashes/'))).toBe(true);
     });
+  });
+});
+
+describe('ApiClient.reportUsage enablement', () => {
+  it('reports usage when the enableUsageReporting argument is omitted, matching the Config default', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(makeJsonResponse({}));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = new ApiClient('srv_test', 'https://api.example.com', createMockLogger());
+    await client.reportUsage('flag-a');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe('https://api.example.com/v1/flags/flag-a/usage');
+    expect(fetchMock.mock.calls[0][1].method).toBe('POST');
+  });
+
+  it('skips the HTTP call when usage reporting is explicitly disabled', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(makeJsonResponse({}));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = new ApiClient('srv_test', 'https://api.example.com', createMockLogger(), false);
+    await client.reportUsage('flag-a');
+
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

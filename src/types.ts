@@ -34,6 +34,14 @@ export interface Config {
   logger?: Logger;
   /** Custom cache instance (overrides cacheBackend when provided) */
   customCache?: Cache;
+  /**
+   * Client agent family reported in the X-ZEN-CLIENT-AGENT header, replacing the
+   * auto-detected default (`zenmanage-javascript` / `zenmanage-javascript-node`).
+   * For packages that wrap this SDK and need to identify themselves, e.g. `zenmanage-react`.
+   */
+  clientAgent?: string;
+  /** Version reported alongside `clientAgent` (default: this SDK's own version) */
+  sdkVersion?: string;
 }
 
 /**

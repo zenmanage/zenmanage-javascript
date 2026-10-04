@@ -4,6 +4,7 @@ import { FlagManager } from './flag-manager';
 import { ApiClient } from './api-client';
 import { RuleEngine } from './rule-engine';
 import { InMemoryCache, NullCache, type Cache } from './cache';
+import { NullLogger } from './logger';
 
 /**
  * Main entry point for the Zenmanage SDK
@@ -12,7 +13,8 @@ export class Zenmanage {
   private readonly flagManager: FlagManager;
 
   constructor(config: Config) {
-    const logger = config.logger!; // Logger is always set by ConfigBuilder
+    // ConfigBuilder fills these in, but a Config written by hand skips the builder.
+    const logger = config.logger ?? new NullLogger();
 
     // Create cache instance
     const cache = this.createCache(config);
@@ -22,7 +24,8 @@ export class Zenmanage {
       config.environmentToken,
       config.apiEndpoint,
       logger,
-      config.enableUsageReporting
+      config.enableUsageReporting,
+      { agent: config.clientAgent, version: config.sdkVersion }
     );
 
     // Create rule engine
@@ -55,7 +58,7 @@ export class Zenmanage {
       return config.customCache;
     }
 
-    switch (config.cacheBackend) {
+    switch (config.cacheBackend ?? 'memory') {
       case 'filesystem':
         throw new ConfigurationError(
           'Filesystem cache requires a custom cache instance. ' +
