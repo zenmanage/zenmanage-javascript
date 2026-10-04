@@ -1,6 +1,7 @@
 import type { Config, Logger } from './types';
 import type { Cache } from './cache/cache.interface';
 import { ConfigurationError } from './errors';
+import { NullLogger } from './logger';
 
 type Runtime = 'node' | 'browser';
 type KeyType = 'server' | 'client' | 'mobile' | 'unknown';
@@ -11,16 +12,6 @@ const MOBILE_KEY_PREFIX = 'mob_';
 
 const CLIENT_AGENT_PATTERN = /^[A-Za-z0-9._-]+$/;
 const SDK_VERSION_PATTERN = /^[A-Za-z0-9._+-]+$/;
-
-/**
- * Default logger that does nothing (null logger pattern)
- */
-class NullLogger implements Logger {
-  debug(): void {}
-  info(): void {}
-  warn(): void {}
-  error(): void {}
-}
 
 /**
  * Fluent builder for creating Config objects

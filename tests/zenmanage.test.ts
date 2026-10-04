@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { Zenmanage } from '../src/zenmanage';
+import { Context } from '../src/context';
 import type { Config } from '../src/types';
 import { createMockLogger } from './test-utils';
 import { ConfigBuilder } from '../src/config';
@@ -145,26 +146,64 @@ describe('Zenmanage', () => {
     });
   });
 
-  describe('usage reporting default', () => {
+  describe('hand-built Config defaults', () => {
     function usageRequests(fetchMock: ReturnType<typeof stubFetch>): string[] {
       return fetchMock.mock.calls
         .map(([url]) => url as string)
         .filter((url) => url.includes('/usage'));
     }
 
-    it('reports usage for a hand-built Config that omits enableUsageReporting', async () => {
-      // Config documents enableUsageReporting as "default: true", and ConfigBuilder sets it,
-      // but a plain object skips the builder. It must still report. (cacheBackend and logger
-      // have to be given too: without the builder's defaults, Zenmanage rejects a missing
-      // cacheBackend and FlagManager calls the missing logger.)
-      const fetchMock = stubFetch();
-      const config: Config = {
-        environmentToken: 'srv_test_123',
-        cacheBackend: 'memory',
-        logger: createMockLogger(),
-      };
+    // Config documents these fields as optional with defaults, and ConfigBuilder fills them in.
+    // A plain object skips the builder, so Zenmanage has to apply the same defaults itself.
+    const minimalConfig: Config = { environmentToken: 'srv_test_123' };
 
-      await new Zenmanage(config).flags().single('some-flag', false);
+    it('constructs from a Config with only an environment token', () => {
+      expect(() => new Zenmanage(minimalConfig)).not.toThrow();
+    });
+
+    it('defaults cacheBackend to memory, so managers share rules that were already fetched', async () => {
+      // With a null cache the second manager would fetch the rules again.
+      const fetchMock = stubFetch();
+      const flags = new Zenmanage({ ...minimalConfig, enableUsageReporting: false }).flags();
+      const first = flags.withContext(Context.single('user', 'alice'));
+      const second = flags.withContext(Context.single('user', 'bob'));
+
+      await first.single('some-flag', false);
+      await second.single('some-flag', false);
+
+      const rulesRequests = fetchMock.mock.calls.filter(([url]) =>
+        (url as string).includes('/v1/flag-json')
+      );
+      expect(rulesRequests).toHaveLength(1);
+    });
+
+    it('still rejects a cacheBackend that is set to something invalid', () => {
+      const config = { ...minimalConfig, cacheBackend: 'invalid' as never };
+
+      expect(() => new Zenmanage(config)).toThrow('Invalid cache backend: invalid');
+    });
+
+    it('falls back to the default without crashing when there is no logger and rules fail to load', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')));
+
+      const flag = await new Zenmanage(minimalConfig).flags().single('some-flag', true);
+
+      expect(flag.asBool()).toBe(true);
+    });
+
+    it('uses the logger it is given instead of the silent default', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')));
+      const logger = createMockLogger();
+
+      await new Zenmanage({ ...minimalConfig, logger }).flags().single('some-flag', true);
+
+      expect(logger.warn).toHaveBeenCalled();
+    });
+
+    it('reports usage when enableUsageReporting is omitted', async () => {
+      const fetchMock = stubFetch();
+
+      await new Zenmanage(minimalConfig).flags().single('some-flag', false);
 
       expect(usageRequests(fetchMock)).toEqual([
         'https://api.zenmanage.com/v1/flags/some-flag/usage',
@@ -173,14 +212,10 @@ describe('Zenmanage', () => {
 
     it('does not report usage when enableUsageReporting is false', async () => {
       const fetchMock = stubFetch();
-      const config: Config = {
-        environmentToken: 'srv_test_123',
-        cacheBackend: 'memory',
-        logger: createMockLogger(),
-        enableUsageReporting: false,
-      };
 
-      await new Zenmanage(config).flags().single('some-flag', false);
+      await new Zenmanage({ ...minimalConfig, enableUsageReporting: false })
+        .flags()
+        .single('some-flag', false);
 
       expect(usageRequests(fetchMock)).toEqual([]);
     });

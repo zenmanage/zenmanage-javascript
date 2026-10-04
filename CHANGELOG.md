@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `single()` and `all()` now fall back to the caller-supplied default (inline parameter or `DefaultsCollection` entry) instead of throwing when rule-loading fails outright — e.g. an unreachable API or an invalid/misconfigured environment token. Previously an evaluation error on the network call was thrown all the way through `single()`/`all()` even when a usable default was available, so a client that couldn't resolve its environment couldn't serve defaults either.
 - Usage reporting now defaults to on when `enableUsageReporting` isn't set, as `Config` has always documented (`default: true`). `ConfigBuilder` always sets it, so builder users were never affected. A `Config` object written by hand without that field silently had usage reporting off, because the internal API client defaulted to `false`. If you depend on that, set `enableUsageReporting: false`.
+- `new Zenmanage(config)` now applies the defaults `Config` documents for a `Config` written by hand, instead of throwing or crashing. Omitting `cacheBackend` threw `Invalid cache backend: undefined`; it now defaults to `'memory'`. Omitting `logger` crashed with `Cannot read properties of undefined` the first time the SDK logged, for example when rules failed to load; it now defaults to a silent logger. `ConfigBuilder` already set both, so builder users were never affected.
 
 ## [3.4.0] - 2026-09-24
 
