@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { Zenmanage } from '../src/zenmanage';
+import type { Config } from '../src/types';
+import { createMockLogger } from './test-utils';
 import { ConfigBuilder } from '../src/config';
 import { ConfigurationError } from '../src/errors';
 import { InMemoryCache } from '../src/cache';
@@ -8,6 +10,28 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
+
+/**
+ * Stubs global fetch to serve the metadata + CDN rules pair loading rules expects, and to
+ * accept any other request (such as a usage report) with an empty 200.
+ */
+function stubFetch() {
+  const fetchMock = vi.fn().mockImplementation((url: string) => {
+    const body = url.includes('/v1/flag-json')
+      ? { data: { cdn: 'https://cdn.example.com', path: '/rules.json' } }
+      : { version: '1', flags: [] };
+
+    return Promise.resolve(
+      new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+  });
+  vi.stubGlobal('fetch', fetchMock);
+
+  return fetchMock;
+}
 
 describe('Zenmanage', () => {
   describe('constructor', () => {
@@ -104,27 +128,8 @@ describe('Zenmanage', () => {
   });
 
   describe('client agent override', () => {
-    function stubFetch(capturedHeaders: Record<string, string>[]): void {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockImplementation((url: string, options: RequestInit) => {
-          capturedHeaders.push(options.headers as Record<string, string>);
-          const body = url.includes('/v1/flag-json')
-            ? { data: { cdn: 'https://cdn.example.com', path: '/rules.json' } }
-            : { version: '1', flags: [] };
-          return Promise.resolve(
-            new Response(JSON.stringify(body), {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' },
-            })
-          );
-        })
-      );
-    }
-
     it('sends the configured client agent and version when loading rules', async () => {
-      const capturedHeaders: Record<string, string>[] = [];
-      stubFetch(capturedHeaders);
+      const fetchMock = stubFetch();
 
       const config = ConfigBuilder.create()
         .withEnvironmentToken('srv_test_123')
@@ -133,7 +138,51 @@ describe('Zenmanage', () => {
         .build();
       await new Zenmanage(config).flags().all();
 
-      expect(capturedHeaders[0]['X-ZEN-CLIENT-AGENT']).toBe('zenmanage-react/1.0.0');
+      const [, options] = fetchMock.mock.calls[0];
+      expect((options.headers as Record<string, string>)['X-ZEN-CLIENT-AGENT']).toBe(
+        'zenmanage-react/1.0.0'
+      );
+    });
+  });
+
+  describe('usage reporting default', () => {
+    function usageRequests(fetchMock: ReturnType<typeof stubFetch>): string[] {
+      return fetchMock.mock.calls
+        .map(([url]) => url as string)
+        .filter((url) => url.includes('/usage'));
+    }
+
+    it('reports usage for a hand-built Config that omits enableUsageReporting', async () => {
+      // Config documents enableUsageReporting as "default: true", and ConfigBuilder sets it,
+      // but a plain object skips the builder. It must still report. (cacheBackend and logger
+      // have to be given too: without the builder's defaults, Zenmanage rejects a missing
+      // cacheBackend and FlagManager calls the missing logger.)
+      const fetchMock = stubFetch();
+      const config: Config = {
+        environmentToken: 'srv_test_123',
+        cacheBackend: 'memory',
+        logger: createMockLogger(),
+      };
+
+      await new Zenmanage(config).flags().single('some-flag', false);
+
+      expect(usageRequests(fetchMock)).toEqual([
+        'https://api.zenmanage.com/v1/flags/some-flag/usage',
+      ]);
+    });
+
+    it('does not report usage when enableUsageReporting is false', async () => {
+      const fetchMock = stubFetch();
+      const config: Config = {
+        environmentToken: 'srv_test_123',
+        cacheBackend: 'memory',
+        logger: createMockLogger(),
+        enableUsageReporting: false,
+      };
+
+      await new Zenmanage(config).flags().single('some-flag', false);
+
+      expect(usageRequests(fetchMock)).toEqual([]);
     });
   });
 });

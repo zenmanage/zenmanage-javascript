@@ -172,6 +172,30 @@ describe('ApiClient security', () => {
   });
 });
 
+describe('ApiClient.reportUsage enablement', () => {
+  it('reports usage when the enableUsageReporting argument is omitted, matching the Config default', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(makeJsonResponse({}));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = new ApiClient('srv_test', 'https://api.example.com', createMockLogger());
+    await client.reportUsage('flag-a');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe('https://api.example.com/v1/flags/flag-a/usage');
+    expect(fetchMock.mock.calls[0][1].method).toBe('POST');
+  });
+
+  it('skips the HTTP call when usage reporting is explicitly disabled', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(makeJsonResponse({}));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = new ApiClient('srv_test', 'https://api.example.com', createMockLogger(), false);
+    await client.reportUsage('flag-a');
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
 describe('ApiClient.reportUsage default value header', () => {
   function captureHeaders(): {
     capturedHeaders: HeadersInit[];

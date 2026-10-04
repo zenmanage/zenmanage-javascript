@@ -45,7 +45,7 @@ export class ApiClient {
     environmentToken: string,
     apiEndpoint: string = DEFAULT_API_ENDPOINT,
     private readonly logger: Logger,
-    private readonly enableUsageReporting: boolean = false,
+    private readonly enableUsageReporting: boolean = true,
     clientIdentity: ClientIdentity = {}
   ) {
     this.baseUrl = apiEndpoint;
