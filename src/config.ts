@@ -236,14 +236,15 @@ export class ConfigBuilder {
 
   /**
    * Detect runtime in a way that works for both browser and Node.js tests.
+   *
+   * Anything without a `window` or `document` is treated as a server runtime,
+   * including edge runtimes. Don't add a check on `process` for the Node
+   * version here: it changes nothing, and bundlers that target the Edge
+   * runtime (Next.js) warn about it.
    */
   private detectRuntime(): Runtime {
     if (typeof window !== 'undefined' || typeof document !== 'undefined') {
       return 'browser';
-    }
-
-    if (typeof process !== 'undefined' && !!process.versions?.node) {
-      return 'node';
     }
 
     return 'node';

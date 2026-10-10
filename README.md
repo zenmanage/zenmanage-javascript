@@ -476,10 +476,14 @@ const config = ConfigBuilder.create()
 
 ### Force Refresh Rules
 
+Rules are re-read automatically once `cacheTtl` has passed, so a long-running server picks up flag changes without a restart. Call `refreshRules()` to pick them up sooner.
+
 ```typescript
 // Force refresh from API (bypasses cache)
 await zenmanage.flags().refreshRules();
 ```
+
+If the API can't be reached when the TTL runs out, the SDK keeps serving the rules it already has and tries again after 30 seconds.
 
 ### Manual Usage Reporting
 

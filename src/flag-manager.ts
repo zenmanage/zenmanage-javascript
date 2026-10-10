@@ -11,6 +11,14 @@ import { isInBucket } from './rollout';
 const CACHE_KEY = 'zenmanage_rules';
 
 /**
+ * How long to wait before trying again after rules fail to (re)load. Reading
+ * the rules retries the API with backoff, so without this pause a down API
+ * would make every flag evaluation pay for a full retry cycle. Capped by
+ * `cacheTtl` for managers configured with a shorter TTL.
+ */
+const RELOAD_RETRY_SECONDS = 30;
+
+/**
  * Flag types this SDK release knows how to evaluate. The API may serve
  * additional types that a given SDK release predates — see
  * `isKnownFlagType`.
@@ -34,6 +42,10 @@ function isKnownFlagType(type: unknown): type is FlagType {
 export class FlagManager {
   private flags: Flag[] | null = null;
   private flagsByKey: Map<string, Flag> | null = null;
+  /** Epoch ms after which the in-memory rules are re-read from the cache, then the API. */
+  private rulesExpireAt = 0;
+  /** The reload in progress on this instance, so concurrent callers share it. */
+  private reloading: Promise<void> | null = null;
   private context: Context;
   private defaults: DefaultsCollection;
 
@@ -107,8 +119,7 @@ export class FlagManager {
    * Create a new FlagManager instance with a different context
    */
   withContext(context: Context): FlagManager {
-    const clone = Object.create(Object.getPrototypeOf(this));
-    Object.assign(clone, this);
+    const clone = this.copy();
     clone.context = context;
     return clone;
   }
@@ -117,9 +128,21 @@ export class FlagManager {
    * Create a new FlagManager instance with default values
    */
   withDefaults(defaults: DefaultsCollection): FlagManager {
+    const clone = this.copy();
+    clone.defaults = defaults;
+    return clone;
+  }
+
+  /**
+   * Copy this manager, including the rules it has already loaded and when
+   * they expire, so a clone follows the same TTL as its source instead of
+   * holding a snapshot forever. A reload in progress belongs to the source
+   * only: the clone starts without one and loads for itself if it needs to.
+   */
+  private copy(): FlagManager {
     const clone = Object.create(Object.getPrototypeOf(this));
     Object.assign(clone, this);
-    clone.defaults = defaults;
+    clone.reloading = null;
     return clone;
   }
 
@@ -160,7 +183,15 @@ export class FlagManager {
    */
   async refreshRules(): Promise<void> {
     this.logger.info('Refreshing rules from API');
-    await this.loadRulesFromApi();
+
+    try {
+      await this.loadRulesFromApi();
+    } catch (error) {
+      // An explicit refresh that fails must not leave the old rules queryable
+      this.discardRules();
+      this.retryReloadSoon();
+      throw error;
+    }
   }
 
   /**
@@ -184,37 +215,112 @@ export class FlagManager {
   }
 
   /**
-   * Ensure rules are loaded (from cache or API)
+   * Ensure rules are loaded and still within `cacheTtl`. Rules already in
+   * memory are used as-is until they expire, with no cache or API read per
+   * evaluation; after that they are re-read from the cache, then the API.
+   * Callers that arrive while a reload is running share it.
    */
   private async ensureRulesLoaded(): Promise<void> {
-    if (this.flags !== null) {
+    if (this.flags !== null && Date.now() <= this.rulesExpireAt) {
       return;
     }
 
-    // Try to load from cache first
-    const cached = await this.cache.get(CACHE_KEY);
-
-    if (cached !== null) {
-      this.logger.debug('Loading rules from cache');
-
-      try {
-        const data = JSON.parse(cached);
-
-        if (data && Array.isArray(data.flags)) {
-          const parsed = this.parseFlags(data.flags as FlagData[]);
-          this.flags = parsed.flags;
-          this.flagsByKey = parsed.flagsByKey;
-          return;
-        }
-      } catch (error) {
-        this.logger.warn('Failed to parse cached rules', {
-          error: (error as Error).message,
-        });
-      }
+    if (this.reloading === null) {
+      this.reloading = this.reloadRules().finally(() => {
+        this.reloading = null;
+      });
     }
 
-    // Load from API
-    await this.loadRulesFromApi();
+    await this.reloading;
+  }
+
+  /**
+   * Load rules from the cache, falling back to the API. If that fails, keep
+   * any rules already in memory (a blip in the API shouldn't turn every flag
+   * into its default) and wait a short while before trying again.
+   */
+  private async reloadRules(): Promise<void> {
+    try {
+      if (await this.loadRulesFromCache()) {
+        return;
+      }
+
+      await this.loadRulesFromApi();
+    } catch (error) {
+      if (this.flags === null) {
+        this.discardRules();
+      }
+
+      this.retryReloadSoon();
+      throw error;
+    }
+  }
+
+  /**
+   * Load rules from the cache. Returns false if there is nothing usable
+   * there, so the caller goes on to the API.
+   */
+  private async loadRulesFromCache(): Promise<boolean> {
+    const cached = await this.cache.get(CACHE_KEY);
+
+    if (cached === null) {
+      return false;
+    }
+
+    this.logger.debug('Loading rules from cache');
+
+    try {
+      const data = JSON.parse(cached);
+
+      if (data && Array.isArray(data.flags)) {
+        this.useRules(data.flags as FlagData[]);
+        this.startTtl();
+        return true;
+      }
+    } catch (error) {
+      this.logger.warn('Failed to parse cached rules', {
+        error: (error as Error).message,
+      });
+    }
+
+    return false;
+  }
+
+  /**
+   * Make these the rules in memory. Assigns `flags` and `flagsByKey` together
+   * so the two can never fall out of sync.
+   */
+  private useRules(flagsData: FlagData[]): void {
+    const parsed = this.parseFlags(flagsData);
+    this.flags = parsed.flags;
+    this.flagsByKey = parsed.flagsByKey;
+  }
+
+  /**
+   * Start the `cacheTtl` for the rules in memory. Called after the cache
+   * write when the rules came from the API, so the rules in memory outlast
+   * the cache entry holding them: by the time they expire, so has the entry,
+   * and the reload reaches the API instead of re-reading its own entry.
+   */
+  private startTtl(): void {
+    this.rulesExpireAt = Date.now() + this.cacheTtl * 1000;
+  }
+
+  /**
+   * Drop the rules in memory so every lookup falls through to the caller's
+   * defaults.
+   */
+  private discardRules(): void {
+    this.flags = [];
+    this.flagsByKey = new Map();
+  }
+
+  /**
+   * After a failed load, keep what is in memory for a short while rather
+   * than trying again on the very next evaluation.
+   */
+  private retryReloadSoon(): void {
+    this.rulesExpireAt = Date.now() + Math.min(RELOAD_RETRY_SECONDS, this.cacheTtl) * 1000;
   }
 
   /**
@@ -261,31 +367,28 @@ export class FlagManager {
   }
 
   /**
-   * Load rules from the API and cache them
+   * Load rules from the API and cache them. A failure leaves the rules in
+   * memory as they were; the caller decides what that means.
    */
   private async loadRulesFromApi(): Promise<void> {
     this.logger.info('Fetching rules from API');
 
     try {
       const response = await this.apiClient.getRules();
-      const parsed = this.parseFlags(response.flags);
-      this.flags = parsed.flags;
-      this.flagsByKey = parsed.flagsByKey;
+      this.useRules(response.flags);
 
       // Cache the response
       await this.cache.set(CACHE_KEY, JSON.stringify(response), this.cacheTtl);
+      this.startTtl();
 
       this.logger.info('Rules loaded and cached', {
-        count: this.flags.length,
+        count: this.flags?.length,
       });
     } catch (error) {
       this.logger.error('Failed to load rules from API', {
         error: (error as Error).message,
       });
 
-      // If we fail to load rules, use empty array
-      this.flags = [];
-      this.flagsByKey = new Map();
       throw error;
     }
   }

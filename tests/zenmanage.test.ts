@@ -200,6 +200,58 @@ describe('Zenmanage', () => {
       expect(logger.warn).toHaveBeenCalled();
     });
 
+    it('serves the new rules once cacheTtl has passed on a client that stays alive', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-10-10T12:00:00Z'));
+      let served = 'v1';
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation((url: string) => {
+          const body = url.includes('/v1/flag-json')
+            ? { data: { cdn: 'https://cdn.example.com', path: '/rules.json' } }
+            : {
+                version: '1',
+                flags: [
+                  {
+                    version: 'fla_a',
+                    type: 'string',
+                    key: 'a',
+                    name: 'A',
+                    target: {
+                      version: 'tar_a',
+                      value: { version: 'val_a', value: { string: served } },
+                    },
+                    rules: [],
+                  },
+                ],
+              };
+
+          return Promise.resolve(new Response(JSON.stringify(body), { status: 200 }));
+        })
+      );
+      const client = new Zenmanage(
+        ConfigBuilder.create()
+          .withEnvironmentToken('srv_test_123')
+          .withCacheTtl(60)
+          .withUsageReporting(false)
+          .build()
+      );
+
+      try {
+        expect((await client.flags().single('a')).asString()).toBe('v1');
+
+        served = 'v2';
+        vi.setSystemTime(Date.now() + 10 * 60 * 1000);
+
+        expect((await client.flags().single('a')).asString()).toBe('v2');
+        expect(
+          (await client.flags().withContext(Context.single('user', 'alice')).single('a')).asString()
+        ).toBe('v2');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('reports usage when enableUsageReporting is omitted', async () => {
       const fetchMock = stubFetch();
 
