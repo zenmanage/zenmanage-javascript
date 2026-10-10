@@ -322,6 +322,52 @@ describe('FlagManager cacheTtl', () => {
     });
   });
 
+  describe('when the cache cannot be written', () => {
+    function createUnwritableCache(): Cache {
+      return {
+        ...createEmptyCache(),
+        set: vi.fn(async () => {
+          throw new Error('disk full');
+        }),
+      };
+    }
+
+    it('still serves the rules it fetched', async () => {
+      const { apiClient } = createApi('v1');
+      const manager = createManager(apiClient, createUnwritableCache());
+
+      expect((await manager.single('a')).asString()).toBe('v1');
+      expect((await manager.single('a')).asString()).toBe('v1');
+      expect(apiClient.getRules).toHaveBeenCalledTimes(1);
+    });
+
+    it('replaces the rules it has on a reload, and goes back to the API next time', async () => {
+      const { served, apiClient } = createApi('v1');
+      const manager = createManager(apiClient, createUnwritableCache());
+      await manager.single('a');
+      served.value = 'v2';
+      advance(TTL_SECONDS + 1);
+
+      expect((await manager.single('a')).asString()).toBe('v2');
+
+      served.value = 'v3';
+      advance(TTL_SECONDS + 1);
+
+      expect((await manager.single('a')).asString()).toBe('v3');
+    });
+
+    it('lets refreshRules() succeed', async () => {
+      const { served, apiClient } = createApi('v1');
+      const manager = createManager(apiClient, createUnwritableCache());
+      await manager.single('a');
+      served.value = 'v2';
+
+      await expect(manager.refreshRules()).resolves.toBeUndefined();
+
+      expect((await manager.single('a')).asString()).toBe('v2');
+    });
+  });
+
   describe('refreshRules()', () => {
     it('still reloads straight away, before the TTL', async () => {
       const { served, apiClient } = createApi('v1');

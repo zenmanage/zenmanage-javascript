@@ -367,8 +367,8 @@ export class FlagManager {
   }
 
   /**
-   * Load rules from the API and cache them. A failure leaves the rules in
-   * memory as they were; the caller decides what that means.
+   * Load rules from the API and cache them. If the fetch fails, the rules in
+   * memory are left as they were and the caller decides what that means.
    */
   private async loadRulesFromApi(): Promise<void> {
     this.logger.info('Fetching rules from API');
@@ -377,8 +377,17 @@ export class FlagManager {
       const response = await this.apiClient.getRules();
       this.useRules(response.flags);
 
-      // Cache the response
-      await this.cache.set(CACHE_KEY, JSON.stringify(response), this.cacheTtl);
+      // Cache the response. The rules are already in hand, so a cache that
+      // can't be written to is not a failed load: the next reload just goes
+      // to the API again.
+      try {
+        await this.cache.set(CACHE_KEY, JSON.stringify(response), this.cacheTtl);
+      } catch (error) {
+        this.logger.warn('Failed to cache rules', {
+          error: (error as Error).message,
+        });
+      }
+
       this.startTtl();
 
       this.logger.info('Rules loaded and cached', {

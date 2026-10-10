@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - A `FlagManager` now reloads its rules once `cacheTtl` has passed. Before, it kept the first rules it loaded until the process restarted (unless you called `refreshRules()`), so `withCacheTtl()` had no effect on a long-running server that kept using `zenmanage.flags()`. Clones made with `withContext()` and `withDefaults()` expire on the same schedule as the manager they came from. Within the TTL nothing changes: evaluations still read neither the cache nor the API. When the TTL has passed, the rules are re-read from the cache first, then the API, and callers that arrive together share one reload.
 - A failed reload no longer throws away the rules the manager already has. If the API can't be reached when the TTL runs out, the manager keeps serving its existing rules and tries again after 30 seconds (or after `cacheTtl`, if that is shorter). A manager whose very first load failed used to stay empty until restart; it now tries again on the same schedule. `refreshRules()` is unchanged: a failed explicit refresh still clears the rules and throws.
+- A cache that can't be written to no longer fails a load that succeeded. Once the rules have been fetched from the API they are used even if the cache write throws; the SDK logs a warning and fetches again at the next reload. Before, the write error was thrown after the rules were fetched, and `refreshRules()` cleared them.
 
 ## [3.5.0] - 2026-10-04
 
