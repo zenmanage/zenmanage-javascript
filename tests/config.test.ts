@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { ConfigBuilder } from '../src/config';
 import { ConfigurationError } from '../src/errors';
 
@@ -9,6 +9,7 @@ describe('ConfigBuilder', () => {
   afterEach(() => {
     (globalThis as any).window = originalWindow;
     (globalThis as any).document = originalDocument;
+    vi.unstubAllGlobals();
   });
 
   describe('create', () => {
@@ -202,6 +203,26 @@ describe('ConfigBuilder', () => {
       expect(() => builder.build()).toThrow(ConfigurationError);
       expect(() => builder.build()).toThrow('Invalid environment token for browser runtime');
       expect(() => builder.build()).toThrow('Use a client key (cli_...)');
+    });
+
+    it('should treat a runtime that only has a document as the browser', () => {
+      (globalThis as any).document = {};
+
+      expect(ConfigBuilder.create().withEnvironmentToken('cli_browser_test').build()).toBeDefined();
+      expect(() => ConfigBuilder.create().withEnvironmentToken('srv_server_test').build()).toThrow(
+        'Invalid environment token for browser runtime'
+      );
+    });
+
+    it('should treat a runtime without process.versions, such as an edge runtime, as a server runtime', () => {
+      vi.stubGlobal('process', { ...process, versions: undefined });
+
+      const config = ConfigBuilder.create().withEnvironmentToken('srv_server_test').build();
+
+      expect(config.environmentToken).toBe('srv_server_test');
+      expect(() => ConfigBuilder.create().withEnvironmentToken('cli_client_test').build()).toThrow(
+        'Invalid environment token for Node.js runtime'
+      );
     });
 
     it('should reject mobile keys in browser runtime', () => {
