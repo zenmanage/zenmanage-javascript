@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Build and type-check with TypeScript 7. No changes to the published package: the built output is byte-for-byte the same.
+
 ## [3.5.4] - 2026-11-21
 
 ### Changed

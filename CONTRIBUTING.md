@@ -56,6 +56,12 @@ npm run format:check
 npm run format
 ```
 
+## TypeScript 7
+
+`tsc` (type-check) runs TypeScript 7, installed as the `@typescript/native` dev dependency. TypeScript 7 has no compiler API yet, so the tools that need one (typescript-eslint and the declaration build in tsup) get TypeScript 6 through `"typescript": "npm:@typescript/typescript6"`. That is why `package.json` has both. `npx tsc6` runs the TypeScript 6 compiler if you need to compare the two.
+
+Lockfile: generate it with npm 10 (what Node 18 to 22 ship). Both npm 10 and npm 11 install from it; a lockfile written by npm 11 fails `npm ci` on npm 10.
+
 ## Code Style
 
 - Use TypeScript for all source code
